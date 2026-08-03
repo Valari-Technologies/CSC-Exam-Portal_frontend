@@ -31,7 +31,7 @@ import { schoolsService } from '@/services/schools.service';
 import { useAuth } from '@/hooks/useAuth';
 import { MAX_GRADE, MIN_GRADE, classLabel } from '@/lib/utils';
 import type { Class, ClassWriteRequest } from '@/types';
-import classesHeaderImg from '@/assets/dashboard_designs/Academics/classes/classes.png';
+import classesHeaderImg from '@/assets/dashboard_designs/Academics/classes/classes.webp';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const classSchema = z.object({
@@ -122,7 +122,7 @@ export default function ClassManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with classes.png background */}
+      {/* Top Header Card with classes.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0f4ff]">
         <img
           src={classesHeaderImg}

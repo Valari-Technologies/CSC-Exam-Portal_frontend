@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, ClipboardList, GraduationCap, Users, BarChart3 } from 'lucide-react';
-import reportsHeaderImg from '@/assets/dashboard_designs/Reports/reports.png';
+import reportsHeaderImg from '@/assets/dashboard_designs/Reports/reports.webp';
 
 const reportCards = [
   {
@@ -42,7 +42,7 @@ export default function ReportsDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with reports.png background */}
+      {/* Top Header Card with reports.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0fdf4]">
         <img
           src={reportsHeaderImg}

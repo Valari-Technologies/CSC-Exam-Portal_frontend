@@ -116,7 +116,7 @@ export default function StudentLoginPage() {
 
   return (
     <div className="sl-50split-container">
-      {/* ─────────────────── LEFT PANEL (50% Width - Exact Navy Blue Hero Artwork from login_hero_bg.png) ─────────────────── */}
+      {/* ─────────────────── LEFT PANEL (50% Width - Exact Navy Blue Hero Artwork from login_hero_bg.webp) ─────────────────── */}
       <motion.div
         className="sl-left-artwork-panel"
         initial={{ opacity: 0 }}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Award, Download, FileSpreadsheet, FileText, Search } from 'lucide-react';
-import publishedResultsHeaderImg from '@/assets/dashboard_designs/Teacher/Published Results.png';
+import publishedResultsHeaderImg from '@/assets/dashboard_designs/Teacher/Published Results.webp';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';

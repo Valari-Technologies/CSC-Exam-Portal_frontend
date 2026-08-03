@@ -26,13 +26,13 @@ import { useCurrentSchool } from '@/hooks/useCurrentSchool';
 import { notificationsService } from '@/services/notifications.service';
 import { StudentNotificationBell } from '@/components/layout/StudentNotificationBell';
 import type { Notification } from '@/types';
-import studentHeaderImg from '@/assets/dashboard_designs/Student/dashboard_header.png';
-import defaultSchoolLogo from '@/assets/csc_school_logo.png';
+import studentHeaderImg from '@/assets/dashboard_designs/Student/dashboard_header.webp';
+import defaultSchoolLogo from '@/assets/csc_school_logo.webp';
 import studentBg from '@/assets/dashboard_designs/background/student_bg.jpeg';
-import card01Img from '@/assets/dashboard_designs/Student/card_01.png';
-import card02Img from '@/assets/dashboard_designs/Student/card_02.png';
-import card03Img from '@/assets/dashboard_designs/Student/card_03.png';
-import card04Img from '@/assets/dashboard_designs/Student/card_04.png';
+import card01Img from '@/assets/dashboard_designs/Student/card_01.webp';
+import card02Img from '@/assets/dashboard_designs/Student/card_02.webp';
+import card03Img from '@/assets/dashboard_designs/Student/card_03.webp';
+import card04Img from '@/assets/dashboard_designs/Student/card_04.webp';
 
 interface NavItem {
   label: string;
@@ -383,14 +383,14 @@ export default function StudentDashboardPage() {
 
         {/* Page Main Content Container */}
         <main className="flex-1 px-6 md:px-10 pb-10 max-w-7xl w-full mx-auto">
-          {/* Welcome Hero Banner - Using High-Res dashboard_header.png with Ambient Glow & Shadow */}
+          {/* Welcome Hero Banner - Using High-Res dashboard_header.webp with Ambient Glow & Shadow */}
           <div className="relative mb-8 group">
             {/* Ambient Purple/Indigo Soft Glow Backdrop */}
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/25 via-indigo-500/20 to-blue-600/20 rounded-[28px] blur-xl opacity-75 group-hover:opacity-95 transition-opacity duration-500" />
 
             {/* Main Banner Container */}
             <div className="w-full max-w-[1920px] mx-auto rounded-[24px] border border-purple-200/60 relative overflow-hidden shadow-xl shadow-purple-950/10 h-[160px] sm:h-[200px] md:h-[230px] lg:h-[250px] flex items-center bg-[#f5f3ff] transition-all duration-300">
-              {/* High Resolution Background Image (dashboard_header.png) */}
+              {/* High Resolution Background Image (dashboard_header.webp) */}
               <img
                 src={studentHeaderImg}
                 alt="Student Dashboard Header"

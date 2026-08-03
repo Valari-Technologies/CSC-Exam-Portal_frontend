@@ -28,7 +28,7 @@ import { questionsService } from '@/services/questions.service';
 import { teachersService } from '@/services/teachers.service';
 import { useAuth } from '@/hooks/useAuth';
 import type { Difficulty, NamedRef, QuestionListItem } from '@/types';
-import questionBankHeaderImg from '@/assets/dashboard_designs/question bank/question bank header.png';
+import questionBankHeaderImg from '@/assets/dashboard_designs/question bank/question bank header.webp';
 
 const DIFFICULTY_VARIANT: Record<Difficulty, 'success' | 'warning' | 'destructive'> = {
   easy: 'success',
@@ -358,7 +358,7 @@ export default function QuestionBankPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with question bank header.png background */}
+      {/* Top Header Card with question bank header.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0f4ff]">
         <img
           src={questionBankHeaderImg}

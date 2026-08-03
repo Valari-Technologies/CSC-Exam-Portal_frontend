@@ -30,13 +30,13 @@ import { formatDistanceToNow } from 'date-fns';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentSchool } from '@/hooks/useCurrentSchool';
-import defaultSchoolLogo from '@/assets/csc_school_logo.png';
+import defaultSchoolLogo from '@/assets/csc_school_logo.webp';
 import { Spinner } from '@/components/ui/Spinner';
 import { notificationsService } from '@/services/notifications.service';
 import { StudentNotificationBell } from '@/components/layout/StudentNotificationBell';
 import type { Notification, NotificationType } from '@/types';
 import { cn } from '@/lib/utils';
-import notificationHeaderImg from '@/assets/dashboard_designs/Notification/notification_header.png';
+import notificationHeaderImg from '@/assets/dashboard_designs/Notification/notification_header.webp';
 import studentBg from '@/assets/dashboard_designs/background/student_bg.jpeg';
 
 interface NavItem {
@@ -356,7 +356,7 @@ export default function NotificationsPage() {
         </button>
       )}
 
-      {/* Top Header Card with notification_header.png background */}
+      {/* Top Header Card with notification_header.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#fbfbfe]">
         <img
           src={notificationHeaderImg}

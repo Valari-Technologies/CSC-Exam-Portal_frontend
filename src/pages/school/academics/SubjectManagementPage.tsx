@@ -31,7 +31,7 @@ import { schoolsService } from '@/services/schools.service';
 import { useAuth } from '@/hooks/useAuth';
 import { classLabel } from '@/lib/utils';
 import type { Subject, SubjectWriteRequest, Class } from '@/types';
-import subjectsHeaderImg from '@/assets/dashboard_designs/Academics/subjects/subjects.png';
+import subjectsHeaderImg from '@/assets/dashboard_designs/Academics/subjects/subjects.webp';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const subjectSchema = z.object({
@@ -132,7 +132,7 @@ export default function SubjectManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with subjects.png background */}
+      {/* Top Header Card with subjects.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#fffcf0]">
         <img
           src={subjectsHeaderImg}

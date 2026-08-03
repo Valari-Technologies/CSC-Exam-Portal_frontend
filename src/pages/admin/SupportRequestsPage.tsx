@@ -25,7 +25,7 @@ import {
 import { supportService } from '@/services/support.service';
 import { extractApiError } from '@/lib/password';
 import type { SupportRequest, SupportStatus } from '@/types';
-import supportRequestImg from '@/assets/dashboard_designs/support request/support request.png';
+import supportRequestImg from '@/assets/dashboard_designs/support request/support request.webp';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const STATUS_VARIANT: Record<SupportStatus, 'success' | 'warning'> = {
@@ -78,7 +78,7 @@ export default function SupportRequestsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with support request.png background */}
+      {/* Top Header Card with support request.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#e8e8ea]">
         <img
           src={supportRequestImg}

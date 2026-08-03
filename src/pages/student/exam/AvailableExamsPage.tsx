@@ -28,10 +28,10 @@ import { StudentNotificationBell } from '@/components/layout/StudentNotification
 import { useCurrentSchool } from '@/hooks/useCurrentSchool';
 import { examsService } from '@/services/exams.service';
 import type { TestAssignmentListItem } from '@/types';
-import defaultSchoolLogo from '@/assets/csc_school_logo.png';
+import defaultSchoolLogo from '@/assets/csc_school_logo.webp';
 import { Spinner } from '@/components/ui/Spinner';
 import studentBg from '@/assets/dashboard_designs/background/student_bg.jpeg';
-import myExamHeaderImg from '@/assets/dashboard_designs/Student/my exam.png';
+import myExamHeaderImg from '@/assets/dashboard_designs/Student/my exam.webp';
 import {
   Dialog,
   DialogContent,
@@ -83,7 +83,7 @@ const EXPIRED: AssignmentStatus = {
 };
 
 const OPEN: AssignmentStatus = {
-  label: 'Available',
+  label: 'Start Exam',
   bgClass: 'bg-emerald-100/90 border-emerald-200',
   textClass: 'text-emerald-800',
   canStart: true,
@@ -573,7 +573,7 @@ export default function AvailableExamsPage() {
                           disabled
                           className="w-full bg-slate-100 text-slate-400 font-semibold text-xs py-3 px-4 rounded-xl cursor-not-allowed text-center"
                         >
-                          {status.label === 'Upcoming' ? 'Exam Not Started Yet' : 'Exam Window Closed'}
+                          {status.label === 'Upcoming' ? 'Upcoming' : 'Expired'}
                         </button>
                       )}
                     </div>

@@ -25,7 +25,7 @@ import {
 import { testsService } from '@/services/tests.service';
 import type { TestListItem, TestStatus } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import testHeaderImg from '@/assets/dashboard_designs/Test/test_header.png';
+import testHeaderImg from '@/assets/dashboard_designs/Test/test_header.webp';
 
 const STATUS_BADGE: Record<TestStatus, { label: string; variant: 'default' | 'success' | 'secondary' }> = {
   draft: { label: 'Draft', variant: 'default' },
@@ -79,7 +79,7 @@ export default function TestsListPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with test_header.png background */}
+      {/* Top Header Card with test_header.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#fff0f0]">
         <img
           src={testHeaderImg}

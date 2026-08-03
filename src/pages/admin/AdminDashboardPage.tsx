@@ -18,7 +18,7 @@ import cscAdminHeaderImg from '@/assets/dashboard_designs/Super admin/HEADER ADM
 import card1Img from '@/assets/dashboard_designs/Super admin/card1.jpeg';
 import card2Img from '@/assets/dashboard_designs/Super admin/card 2.jpeg';
 import card3Img from '@/assets/dashboard_designs/Super admin/card3.jpeg';
-import defaultSchoolLogo from '@/assets/csc_school_logo.png';
+import defaultSchoolLogo from '@/assets/csc_school_logo.webp';
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();

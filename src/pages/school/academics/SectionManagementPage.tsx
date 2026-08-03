@@ -31,7 +31,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { classLabel } from '@/lib/utils';
 import { SECTION_NAMES, isStandardSection } from '@/lib/sections';
 import type { Class, Section, SectionWriteRequest } from '@/types';
-import sectionHeaderImg from '@/assets/dashboard_designs/Academics/section/section.png';
+import sectionHeaderImg from '@/assets/dashboard_designs/Academics/section/section.webp';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const sectionSchema = z.object({
@@ -138,7 +138,7 @@ export default function SectionManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with section.png background */}
+      {/* Top Header Card with section.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0f5ff]">
         <img
           src={sectionHeaderImg}

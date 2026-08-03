@@ -15,7 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { teachersService } from '@/services/teachers.service';
 import { schoolsService } from '@/services/schools.service';
 import { cn } from '@/lib/utils';
-import teacherHeaderImg from '@/assets/dashboard_designs/Teacher/Teacher_dashboard_header.png';
+import teacherHeaderImg from '@/assets/dashboard_designs/Teacher/Teacher_dashboard_header.webp';
 import card1Img from '@/assets/dashboard_designs/Teacher/teacher_card1.jpeg';
 import card2Img from '@/assets/dashboard_designs/Teacher/teacher_card2.jpeg';
 import card3Img from '@/assets/dashboard_designs/Teacher/teacher_card3.jpeg';

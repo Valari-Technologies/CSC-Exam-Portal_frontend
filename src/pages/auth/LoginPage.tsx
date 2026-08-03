@@ -113,7 +113,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-50split-container">
-      {/* ─────────────────── LEFT PANEL (50% Width - Exact Navy Blue Hero Artwork from login_hero_bg.png) ─────────────────── */}
+      {/* ─────────────────── LEFT PANEL (50% Width - Exact Navy Blue Hero Artwork from login_hero_bg.webp) ─────────────────── */}
       <motion.div
         className="login-left-artwork-panel"
         initial={{ opacity: 0 }}

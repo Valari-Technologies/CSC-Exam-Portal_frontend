@@ -47,12 +47,12 @@ import { Label } from '@/components/ui/Label';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentSchool } from '@/hooks/useCurrentSchool';
-import defaultSchoolLogo from '@/assets/csc_school_logo.png';
+import defaultSchoolLogo from '@/assets/csc_school_logo.webp';
 import { authService } from '@/services/auth.service';
 import { cn } from '@/lib/utils';
 import { getCroppedBlob } from '@/lib/cropImage';
 import { PASSWORD_RULES_HINT, extractApiError, passwordField } from '@/lib/password';
-import profileHeaderImg from '@/assets/dashboard_designs/profile/profile.png';
+import profileHeaderImg from '@/assets/dashboard_designs/profile/profile.webp';
 import studentBg from '@/assets/dashboard_designs/background/student_bg.jpeg';
 
 interface NavItem {
@@ -400,7 +400,7 @@ export default function ProfilePage() {
         </button>
       )}
 
-      {/* Top Header Card with profile.png background */}
+      {/* Top Header Card with profile.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f5f3ff]">
         <img
           src={profileHeaderImg}

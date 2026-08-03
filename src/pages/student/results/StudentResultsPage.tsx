@@ -31,10 +31,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { notificationsService } from '@/services/notifications.service';
 import { StudentNotificationBell } from '@/components/layout/StudentNotificationBell';
 import { useCurrentSchool } from '@/hooks/useCurrentSchool';
-import defaultSchoolLogo from '@/assets/csc_school_logo.png';
+import defaultSchoolLogo from '@/assets/csc_school_logo.webp';
 import { Spinner } from '@/components/ui/Spinner';
 import studentBg from '@/assets/dashboard_designs/background/student_bg.jpeg';
-import myResultHeaderImg from '@/assets/dashboard_designs/Student/my result.png';
+import myResultHeaderImg from '@/assets/dashboard_designs/Student/my result.webp';
 import {
   DropdownMenu,
   DropdownMenuContent,

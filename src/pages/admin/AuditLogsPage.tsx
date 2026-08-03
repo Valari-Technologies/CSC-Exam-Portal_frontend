@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Search, Shield, ChevronDown } from 'lucide-react';
-import auditLogHeaderImg from '@/assets/dashboard_designs/Audit logs/audit log.png';
+import auditLogHeaderImg from '@/assets/dashboard_designs/Audit logs/audit log.webp';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -83,7 +83,7 @@ export default function AuditLogsPage() {
 
   return (
     <div className="space-y-6 relative">
-      {/* Premium Header Banner with audit log.png background */}
+      {/* Premium Header Banner with audit log.webp background */}
       <div className="relative group rounded-[24px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0f4ff]">
         <img
           src={auditLogHeaderImg}

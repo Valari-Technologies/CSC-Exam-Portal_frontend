@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import { schoolsService } from '@/services/schools.service';
-import academicsCardImg from '@/assets/dashboard_designs/Academics/Academics_card.png';
+import academicsCardImg from '@/assets/dashboard_designs/Academics/Academics_card.webp';
 import academicsCard1 from '@/assets/dashboard_designs/Academics/academic-card1.jpeg';
 import academicsCard2 from '@/assets/dashboard_designs/Academics/academic-card2.jpeg';
 import academicsCard3 from '@/assets/dashboard_designs/Academics/academic-card3.jpeg';

@@ -31,7 +31,7 @@ import { classLabel } from '@/lib/utils';
 import { SECTION_NAMES } from '@/lib/sections';
 import type { StudentProfile } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import studentSubHeaderImg from '@/assets/dashboard_designs/Student/student_sub_header.png';
+import studentSubHeaderImg from '@/assets/dashboard_designs/Student/student_sub_header.webp';
 
 export default function StudentsListPage() {
   const [page, setPage] = useState(1);
@@ -142,7 +142,7 @@ export default function StudentsListPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with student_sub_header.png background */}
+      {/* Top Header Card with student_sub_header.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0f7ff]">
         <img
           src={studentSubHeaderImg}

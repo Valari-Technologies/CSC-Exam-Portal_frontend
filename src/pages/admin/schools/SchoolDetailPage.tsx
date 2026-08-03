@@ -27,12 +27,12 @@ import { Spinner } from '@/components/ui/Spinner';
 import { schoolsService } from '@/services/schools.service';
 import type { SchoolStatus } from '@/types';
 import SchoolAdminSection from './SchoolAdminSection';
-import card1Img from '@/assets/dashboard_designs/Super admin/school-card1.png';
-import card2Img from '@/assets/dashboard_designs/Super admin/school-card2.png';
-import card3Img from '@/assets/dashboard_designs/Super admin/school-card3.png';
-import card4Img from '@/assets/dashboard_designs/Super admin/school-card4.png';
-import card5Img from '@/assets/dashboard_designs/Super admin/school-card5.png';
-import card6Img from '@/assets/dashboard_designs/Super admin/school-card6.png';
+import card1Img from '@/assets/dashboard_designs/Super admin/school-card1.webp';
+import card2Img from '@/assets/dashboard_designs/Super admin/school-card2.webp';
+import card3Img from '@/assets/dashboard_designs/Super admin/school-card3.webp';
+import card4Img from '@/assets/dashboard_designs/Super admin/school-card4.webp';
+import card5Img from '@/assets/dashboard_designs/Super admin/school-card5.webp';
+import card6Img from '@/assets/dashboard_designs/Super admin/school-card6.webp';
 
 const STATUS_VARIANT: Record<SchoolStatus, 'success' | 'warning' | 'destructive'> = {
   active: 'success',

@@ -24,8 +24,8 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentSchool } from '@/hooks/useCurrentSchool';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import defaultSchoolLogo from '@/assets/csc_school_logo.png';
-import superAdminLogo from '@/assets/dashboard_designs/Super admin/super_admin_logo.png';
+import defaultSchoolLogo from '@/assets/csc_school_logo.webp';
+import superAdminLogo from '@/assets/dashboard_designs/Super admin/super_admin_logo.webp';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '@/types';
 

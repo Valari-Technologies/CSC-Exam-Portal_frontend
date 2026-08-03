@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, GraduationCap, ListChecks, Users } from 'lucide-react';
-import headerImg from '@/assets/dashboard_designs/School/School_dashboard_header.png';
-import card2Img from '@/assets/dashboard_designs/School/school-card2.png';
-import card3Img from '@/assets/dashboard_designs/School/school-card3.png';
-import card4Img from '@/assets/dashboard_designs/School/school-card4.png';
-import card5Img from '@/assets/dashboard_designs/School/school-card5.png';
-import card6Img from '@/assets/dashboard_designs/School/school-card6.png';
+import headerImg from '@/assets/dashboard_designs/School/School_dashboard_header.webp';
+import card2Img from '@/assets/dashboard_designs/School/school-card2.webp';
+import card3Img from '@/assets/dashboard_designs/School/school-card3.webp';
+import card4Img from '@/assets/dashboard_designs/School/school-card4.webp';
+import card5Img from '@/assets/dashboard_designs/School/school-card5.webp';
+import card6Img from '@/assets/dashboard_designs/School/school-card6.webp';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';

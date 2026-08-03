@@ -55,11 +55,18 @@ function loadGsiScript(): Promise<void> {
   });
 }
 
+let activeOnCredential: ((idToken: string) => void | Promise<void>) | null = null;
+let googleInitialized = false;
+
 export function GoogleSignInButton({ onCredential, disabled }: GoogleSignInButtonProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+  useEffect(() => {
+    activeOnCredential = onCredential;
+  }, [onCredential]);
 
   useEffect(() => {
     if (!clientId || !containerRef.current) return;
@@ -69,12 +76,19 @@ export function GoogleSignInButton({ onCredential, disabled }: GoogleSignInButto
     loadGsiScript()
       .then(() => {
         if (cancelled || !containerRef.current || !window.google) return;
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: (response) => {
-            if (response.credential) void onCredential(response.credential);
-          },
-        });
+        
+        if (!googleInitialized) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (response) => {
+              if (response.credential && activeOnCredential) {
+                void activeOnCredential(response.credential);
+              }
+            },
+          });
+          googleInitialized = true;
+        }
+        
         window.google.accounts.id.renderButton(containerRef.current, {
           type: 'standard',
           theme: 'outline',
@@ -89,7 +103,7 @@ export function GoogleSignInButton({ onCredential, disabled }: GoogleSignInButto
     return () => {
       cancelled = true;
     };
-  }, [clientId, onCredential]);
+  }, [clientId]);
 
   if (!clientId) {
     return (

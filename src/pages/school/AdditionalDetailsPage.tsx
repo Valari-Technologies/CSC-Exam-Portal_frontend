@@ -10,7 +10,7 @@ import { useCurrentSchool } from '@/hooks/useCurrentSchool';
 import { supportService } from '@/services/support.service';
 import { extractApiError } from '@/lib/password';
 import type { SupportIssueType } from '@/types';
-import additionalDetailsHeaderImg from '@/assets/dashboard_designs/School/Additonal details.png';
+import additionalDetailsHeaderImg from '@/assets/dashboard_designs/School/Additonal details.webp';
 
 const ISSUE_OPTIONS: { value: SupportIssueType; label: string }[] = [
   { value: 'incorrect_school_name', label: 'Incorrect School Name' },

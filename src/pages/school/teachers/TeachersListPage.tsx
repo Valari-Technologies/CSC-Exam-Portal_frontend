@@ -27,7 +27,7 @@ import { schoolsService } from '@/services/schools.service';
 import { useAuth } from '@/hooks/useAuth';
 import type { TeacherProfile } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import teacherSubHeaderImg from '@/assets/dashboard_designs/Teacher/teacher_sub_header.png';
+import teacherSubHeaderImg from '@/assets/dashboard_designs/Teacher/teacher_sub_header.webp';
 
 export default function TeachersListPage() {
   const [page, setPage] = useState(1);
@@ -89,7 +89,7 @@ export default function TeachersListPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with teacher_sub_header.png background */}
+      {/* Top Header Card with teacher_sub_header.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0f9ff]">
         <img
           src={teacherSubHeaderImg}

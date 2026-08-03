@@ -25,7 +25,7 @@ import {
 import { schoolsService } from '@/services/schools.service';
 import type { SchoolListItem, SchoolStatus } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import schoolSubHeaderImg from '@/assets/dashboard_designs/School/school_sub_header.png';
+import schoolSubHeaderImg from '@/assets/dashboard_designs/School/school_sub_header.webp';
 
 const STATUS_VARIANT: Record<SchoolStatus, 'success' | 'warning' | 'destructive'> = {
   active: 'success',
@@ -79,7 +79,7 @@ export default function SchoolsListPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with school_sub_header.png background */}
+      {/* Top Header Card with school_sub_header.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0f4ff]">
         <img
           src={schoolSubHeaderImg}

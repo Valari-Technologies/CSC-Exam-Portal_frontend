@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { ClipboardCheck, Search } from 'lucide-react';
-import completeExamHeaderImg from '@/assets/dashboard_designs/Teacher/complete exam.png';
+import completeExamHeaderImg from '@/assets/dashboard_designs/Teacher/complete exam.webp';
 
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';

@@ -32,7 +32,7 @@ import { schoolsService } from '@/services/schools.service';
 import { useAuth } from '@/hooks/useAuth';
 import { classLabel } from '@/lib/utils';
 import type { Chapter, ChapterWriteRequest } from '@/types';
-import chaptersHeaderImg from '@/assets/dashboard_designs/Academics/chapters/chapters.png';
+import chaptersHeaderImg from '@/assets/dashboard_designs/Academics/chapters/chapters.webp';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const chapterSchema = z.object({
@@ -225,7 +225,7 @@ export default function ChapterManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card with chapters.png background */}
+      {/* Top Header Card with chapters.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0f9ff]">
         <img
           src={chaptersHeaderImg}
