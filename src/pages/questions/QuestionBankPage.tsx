@@ -38,7 +38,7 @@ const DIFFICULTY_VARIANT: Record<Difficulty, 'success' | 'warning' | 'destructiv
 
 // A bounded-large fetch so the whole bank can be grouped by subject client-side
 // without a subject's questions being split across pages.
-const FETCH_SIZE = 200;
+const FETCH_SIZE = 1000;
 
 // Columns rendered per question row (the subject lives in the group header).
 const COLUMN_COUNT = 8;

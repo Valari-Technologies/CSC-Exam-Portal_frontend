@@ -113,6 +113,16 @@ export default function AdditionalDetailsPage() {
           <DetailRow label="School ID" value={school?.code ?? ''} />
           <DetailRow label="Principal Name" value={school?.principal_name ?? ''} />
           <DetailRow label="School Official Email" value={school?.official_email ?? ''} />
+          <DetailRow
+            label="School Board"
+            value={
+              school?.school_board === 'state_board' ? 'State Board'
+                : school?.school_board === 'cbse' ? 'CBSE Board'
+                : school?.school_board === 'matriculation' ? 'Matriculation'
+                : school?.school_board ?? ''
+            }
+          />
+          <DetailRow label="School Code" value={school?.school_code ?? ''} />
         </CardContent>
       </Card>
 

@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  BookOpen,
   Building2,
   Edit,
   GraduationCap,
+  Hash,
   Mail,
   MapPin,
   Phone,
@@ -231,6 +233,25 @@ export default function SchoolDetailPage() {
             <div>
               <p className="text-muted-foreground text-xs">Contact phone</p>
               <p>{school.contact_phone}</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <BookOpen className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div>
+              <p className="text-muted-foreground text-xs">School Board</p>
+              <p>
+                {school.school_board === 'state_board' ? 'State Board'
+                  : school.school_board === 'cbse' ? 'CBSE Board'
+                  : school.school_board === 'matriculation' ? 'Matriculation'
+                  : school.school_board || '—'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <Hash className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div>
+              <p className="text-muted-foreground text-xs">School Code</p>
+              <p className="font-mono">{school.school_code || '—'}</p>
             </div>
           </div>
           <div className="md:col-span-2 text-xs text-muted-foreground border-t pt-3">

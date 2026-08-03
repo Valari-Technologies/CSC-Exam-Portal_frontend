@@ -49,7 +49,7 @@ const STATUS_BADGE: Record<TestStatus, { label: string; variant: 'default' | 'su
 // The picker groups by chapter, so it must hold the whole bank for the subject at
 // once — a chapter split across a hidden page boundary defeats the grouping.
 // QuestionViewSet uses LargePagination (max 500), so this is honoured.
-const PICKER_FETCH_SIZE = 200;
+const PICKER_FETCH_SIZE = 1000;
 
 // Checkbox + Question + Difficulty + Marks — the span for a chapter header row.
 const PICKER_COLUMN_COUNT = 4;
