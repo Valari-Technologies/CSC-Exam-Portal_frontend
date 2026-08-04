@@ -73,6 +73,7 @@ export default function TestPreviewPage() {
   const [autoGenDifficulty, setAutoGenDifficulty] = useState<string>('');
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<number[]>([]);
   const [questionSearch, setQuestionSearch] = useState('');
+  const [selectedChapterIdFilter, setSelectedChapterIdFilter] = useState<number | 'all'>('all');
   // Which chapter groups are COLLAPSED — tracking the closed ones keeps every
   // group open by default, including any that appears after a search changes.
   const [collapsedChapters, setCollapsedChapters] = useState<Set<number>>(new Set());
@@ -191,6 +192,17 @@ export default function TestPreviewPage() {
     return Array.from(map.values()).sort((a, b) => a.chapterName.localeCompare(b.chapterName));
   }, [questionsQuery.data]);
 
+  const filteredChapterGroups = useMemo(() => {
+    if (selectedChapterIdFilter === 'all') {
+      return chapterGroups;
+    }
+    return chapterGroups.filter((g) => g.chapterId === selectedChapterIdFilter);
+  }, [chapterGroups, selectedChapterIdFilter]);
+
+  const chaptersList = useMemo(() => {
+    return chapterGroups.map((g) => ({ id: g.chapterId, name: g.chapterName }));
+  }, [chapterGroups]);
+
   if (isLoading) return <Spinner label="Loading test..." />;
   if (isError || !test) return <p className="text-sm text-destructive">Test not found.</p>;
 
@@ -205,7 +217,7 @@ export default function TestPreviewPage() {
   // dangerous. Here it feeds "Add questions", and collapsing a finished chapter to get at
   // the next one is the natural way to build a paper — so selections persist through a
   // collapse and only Select All is scoped to what is visible.
-  const selectableVisible = chapterGroups
+  const selectableVisible = filteredChapterGroups
     .filter((g) => !collapsedChapters.has(g.chapterId))
     .flatMap((g) => g.items)
     .filter((q) => !existingQuestionIds.has(q.id))
@@ -551,6 +563,7 @@ export default function TestPreviewPage() {
           setSelectedQuestionIds([]);
           setQuestionSearch('');
           setCollapsedChapters(new Set());
+          setSelectedChapterIdFilter('all');
         }
       }}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -561,14 +574,33 @@ export default function TestPreviewPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mb-4">
-            <input
-              type="search"
-              value={questionSearch}
-              onChange={(e) => setQuestionSearch(e.target.value)}
-              placeholder="Search questions..."
-              className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="flex-1">
+              <input
+                type="search"
+                value={questionSearch}
+                onChange={(e) => setQuestionSearch(e.target.value)}
+                placeholder="Search questions..."
+                className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="w-full sm:w-64">
+              <select
+                value={selectedChapterIdFilter}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedChapterIdFilter(val === 'all' ? 'all' : Number(val));
+                }}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="all">All Chapters</option>
+                {chaptersList.map((ch) => (
+                  <option key={ch.id} value={ch.id}>
+                    {ch.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {questionsQuery.isLoading ? (
@@ -606,15 +638,49 @@ export default function TestPreviewPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {chapterGroups.map((group) => {
+                  {filteredChapterGroups.map((group) => {
                     const isCollapsed = collapsedChapters.has(group.chapterId);
                     const selectedInGroup = group.items.filter((q) =>
                       selectedQuestionIds.includes(q.id),
                     ).length;
+                    const selectableInGroup = group.items
+                      .filter((q) => !existingQuestionIds.has(q.id))
+                      .map((q) => q.id);
+                    const allSelectableInGroupSelected =
+                      selectableInGroup.length > 0 &&
+                      selectableInGroup.every((qid) => selectedQuestionIds.includes(qid));
+                    const someSelectableInGroupSelected =
+                      selectableInGroup.some((qid) => selectedQuestionIds.includes(qid)) &&
+                      !allSelectableInGroupSelected;
+
                     return (
                       <Fragment key={group.chapterId}>
                         <TableRow className="bg-muted/60 hover:bg-muted/60">
-                          <TableCell colSpan={PICKER_COLUMN_COUNT} className="p-0">
+                          <TableCell className="w-12">
+                            <input
+                              type="checkbox"
+                              checked={allSelectableInGroupSelected}
+                              disabled={selectableInGroup.length === 0}
+                              ref={(el) => {
+                                if (el) {
+                                  el.indeterminate = someSelectableInGroupSelected;
+                                }
+                              }}
+                              onChange={() => {
+                                setSelectedQuestionIds((prev) => {
+                                  if (allSelectableInGroupSelected) {
+                                    return prev.filter((qid) => !selectableInGroup.includes(qid));
+                                  } else {
+                                    return [...new Set([...prev, ...selectableInGroup])];
+                                  }
+                                });
+                              }}
+                              className="rounded border-input"
+                              aria-label={`Select all questions in ${group.chapterName}`}
+                              title={`Select all in ${group.chapterName}`}
+                            />
+                          </TableCell>
+                          <TableCell colSpan={PICKER_COLUMN_COUNT - 1} className="p-0">
                             <button
                               type="button"
                               onClick={() => toggleChapter(group.chapterId)}

@@ -20,6 +20,7 @@ export interface ResultListParams {
   is_published?: boolean;
   passed?: boolean;
   search?: string;
+  search_type?: string;
   ordering?: string;
 }
 

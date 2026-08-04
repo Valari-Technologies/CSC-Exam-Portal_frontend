@@ -31,6 +31,8 @@ function formatDateTime(iso: string | null): string {
 export default function CompletedExamsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [searchType, setSearchType] = useState('student_name');
+  const [showDropdown, setShowDropdown] = useState(false);
   const [classFilter, setClassFilter] = useState('');
   const [sectionFilter, setSectionFilter] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
@@ -56,7 +58,7 @@ export default function CompletedExamsPage() {
   });
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['exam-sessions', { page, search, classFilter, sectionFilter, subjectFilter, dateFrom, dateTo }],
+    queryKey: ['exam-sessions', { page, search, searchType, classFilter, sectionFilter, subjectFilter, dateFrom, dateTo }],
     queryFn: () =>
       examsService.listSessions({
         page,
@@ -65,7 +67,7 @@ export default function CompletedExamsPage() {
         // when a Status filter existed; with that filter removed it is now the
         // only view, so a session still in progress never appears here.
         status_in: 'submitted,evaluated,published',
-        ...(search ? { search } : {}),
+        ...(search ? { search, search_type: searchType } : {}),
         ...(classFilter ? { school_class: Number(classFilter) } : {}),
         ...(sectionFilter ? { section: Number(sectionFilter) } : {}),
         ...(subjectFilter ? { subject: Number(subjectFilter) } : {}),
@@ -121,17 +123,68 @@ export default function CompletedExamsPage() {
 
       {/* filters */}
       <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-xs grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
-        <div className="space-y-1 col-span-2">
-          <Label htmlFor="search" className="text-xs font-black text-slate-500 uppercase tracking-wider">Student</Label>
+        <div className="space-y-1 col-span-2 relative">
+          <Label htmlFor="search" className="text-xs font-black text-slate-550 uppercase tracking-wider">
+            Search By {searchType === 'student_name' ? 'Student Name' : searchType === 'chapter_name' ? 'Chapter Name' : 'Student ID'}
+          </Label>
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <Input
               id="search"
-              className="pl-9 py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10"
-              placeholder="Search student name..."
+              className="pl-9 py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 w-full"
+              placeholder={
+                searchType === 'student_name' ? 'Search student name...' :
+                searchType === 'chapter_name' ? 'Search chapter name...' :
+                'Search student ID...'
+              }
               value={search}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
               onChange={(e) => { setSearch(e.target.value); resetPage(); }}
             />
+            {showDropdown && (
+              <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                <button
+                  type="button"
+                  onMouseDown={() => {
+                    setSearchType('student_name');
+                    setShowDropdown(false);
+                    resetPage();
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 font-bold ${
+                    searchType === 'student_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                  }`}
+                >
+                  Student Name
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={() => {
+                    setSearchType('chapter_name');
+                    setShowDropdown(false);
+                    resetPage();
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 font-bold ${
+                    searchType === 'chapter_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                  }`}
+                >
+                  Chapter Name
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={() => {
+                    setSearchType('student_id');
+                    setShowDropdown(false);
+                    resetPage();
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 font-bold ${
+                    searchType === 'student_id' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                  }`}
+                >
+                  Student ID
+                </button>
+              </div>
+            )}
           </div>
         </div>
         <div className="space-y-1">

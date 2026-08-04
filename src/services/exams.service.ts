@@ -26,6 +26,7 @@ export interface SessionListParams {
   date_from?: string;
   date_to?: string;
   search?: string;
+  search_type?: string;
   ordering?: string;
 }
 
