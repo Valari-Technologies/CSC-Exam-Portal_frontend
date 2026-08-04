@@ -396,7 +396,7 @@ export default function StudentLoginPage() {
           max-width: 460px;
           background: #ffffff;
           border-radius: 24px;
-          padding: 3.5rem 2.5rem 2.25rem;
+          padding: 2.5rem 2.5rem 2.25rem;
           box-shadow:
             0 14px 44px rgba(15, 27, 61, 0.08),
             0 2px 8px rgba(0, 0, 0, 0.03);
@@ -409,10 +409,8 @@ export default function StudentLoginPage() {
 
         /* Avatar Circle Overlay — CSC Deep Navy Gradient */
         .sl-avatar-badge {
-          position: absolute;
-          top: -30px;
-          left: 50%;
-          transform: translateX(-50%);
+          position: relative;
+          margin-bottom: 1.25rem;
           width: 60px;
           height: 60px;
           border-radius: 50%;
@@ -751,7 +749,7 @@ export default function StudentLoginPage() {
             padding: 2rem 1rem;
           }
           .sl-card-box {
-            padding: 3rem 1.25rem 1.5rem;
+            padding: 2rem 1.25rem 1.5rem;
             border-radius: 20px;
           }
         }
