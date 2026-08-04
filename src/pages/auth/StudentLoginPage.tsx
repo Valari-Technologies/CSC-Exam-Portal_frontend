@@ -325,6 +325,10 @@ export default function StudentLoginPage() {
 
       {/* ─────────────────── SCOPED CSS STYLES (Proportional Width & Navigation Styling) ─────────────────── */}
       <style>{`
+        * {
+          box-sizing: border-box;
+        }
+
         /* ============================================= */
         /*  FULLPAGE 50/50 CONTAINER                     */
         /* ============================================= */
