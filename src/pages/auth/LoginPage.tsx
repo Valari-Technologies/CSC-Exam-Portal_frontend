@@ -360,7 +360,8 @@ export default function LoginPage() {
 
         .login-hero-img-full {
           display: block;
-          width: 100%;
+          width: 118%;
+          max-width: none;
           height: 100%;
           object-fit: cover;
           object-position: left center;
@@ -373,10 +374,11 @@ export default function LoginPage() {
           position: relative;
           z-index: 2;
           width: 50%;
-          min-height: 100vh;
+          height: 100vh;
+          overflow-y: auto;
           display: flex;
+          flex-direction: column;
           align-items: center;
-          justify-content: center;
           padding: 2.5rem 3rem;
           background: #ffffff;
         }
@@ -396,6 +398,8 @@ export default function LoginPage() {
           display: flex;
           flex-direction: column;
           align-items: center;
+          margin-top: auto;
+          margin-bottom: auto;
         }
 
         /* Avatar Circle Overlay — CSC Deep Navy Gradient */
@@ -727,7 +731,9 @@ export default function LoginPage() {
           }
           .login-right-form-panel {
             width: 100%;
+            height: auto;
             min-height: auto;
+            overflow-y: visible;
             padding: 2.5rem 1.5rem 2rem;
           }
         }
