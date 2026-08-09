@@ -133,7 +133,7 @@ export default function SchoolDashboardPage() {
                 <select
                   value={selectedSchoolId ?? ''}
                   onChange={(e) => setSelectedSchoolId(e.target.value ? Number(e.target.value) : null)}
-                  className="py-1 px-2.5 rounded-xl border border-blue-200/60 bg-white/90 text-slate-800 text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-xs"
+                  className="py-1 px-2.5 rounded-xl border border-slate-200 bg-white/90 text-slate-800 text-xs sm:text-sm font-bold focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 cursor-pointer shadow-xs transition-all duration-150 hover:bg-slate-50/50"
                 >
                   <option value="">Select a school…</option>
                   {schoolsListQuery.data?.results.map((s) => (

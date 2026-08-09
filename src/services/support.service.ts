@@ -38,4 +38,8 @@ export const supportService = {
     const { data } = await api.post<SupportRequest>(`/support-requests/${id}/reply/`, payload);
     return data;
   },
+
+  async delete(id: number): Promise<void> {
+    await api.delete(`/support-requests/${id}/`);
+  },
 };

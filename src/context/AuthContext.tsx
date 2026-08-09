@@ -50,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('pageshow', onPageShow);
   }, []);
 
+
   const login = useCallback(async (payload: LoginRequest) => {
     const { user: loggedIn } = await authService.login(payload);
     setUser(loggedIn);
@@ -78,6 +79,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authService.logout();
     setUser(null);
   }, []);
+
+  // Inactivity auto-logout after 20 minutes of no user interaction
+  useEffect(() => {
+    if (!user) return;
+
+    let timeoutId: number;
+
+    const resetTimer = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        logout();
+      }, 20 * 60 * 1000); // 20 minutes
+    };
+
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach((event) => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    resetTimer();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [user, logout]);
 
   const refreshUser = useCallback(async () => {
     await loadUser();

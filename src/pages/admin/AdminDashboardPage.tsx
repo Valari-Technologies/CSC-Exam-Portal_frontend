@@ -179,6 +179,7 @@ export default function AdminDashboardPage() {
               <thead>
                 <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   <th className="pb-3 px-3">School Name</th>
+                  <th className="pb-3 px-3">School ID</th>
                   <th className="pb-3 px-3">School Code</th>
                   <th className="pb-3 px-3 text-center">Teachers</th>
                   <th className="pb-3 px-3 text-center">Students</th>
@@ -204,6 +205,7 @@ export default function AdminDashboardPage() {
                       </div>
                     </td>
                     <td className="py-3.5 px-3 font-mono font-semibold text-slate-500">{school.code}</td>
+                    <td className="py-3.5 px-3 font-mono font-semibold text-slate-500">{school.school_code || '—'}</td>
                     <td className="py-3.5 px-3 text-center font-bold text-slate-800">{school.teachers_count}</td>
                     <td className="py-3.5 px-3 text-center font-bold text-slate-800">{school.students_count}</td>
                     <td className="py-3.5 px-3 text-right">

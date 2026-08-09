@@ -147,6 +147,7 @@ export default function SchoolsListPage() {
                 <TableHead className="w-16">S.No</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>School ID</TableHead>
+                <TableHead>School Code</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Users</TableHead>
@@ -166,6 +167,7 @@ export default function SchoolsListPage() {
                     </Link>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{school.code}</TableCell>
+                  <TableCell className="font-mono text-xs">{school.school_code || '—'}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {school.city}, {school.state}
                   </TableCell>

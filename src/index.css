@@ -58,4 +58,15 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Native select dropdown styles to match the indigo theme */
+  select {
+    @apply transition-all duration-150 border border-slate-200 rounded-xl py-2 px-3 text-sm bg-background text-slate-800 outline-none cursor-pointer;
+  }
+  select:hover {
+    @apply border-slate-300 bg-slate-50/50;
+  }
+  select:focus {
+    @apply border-indigo-500 ring-4 ring-indigo-100 bg-white scale-[1.005];
+  }
 }

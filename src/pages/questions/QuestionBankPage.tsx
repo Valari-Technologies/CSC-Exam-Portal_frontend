@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table';
-import { subjectsService } from '@/services/academics.service';
+import { subjectsService, chaptersService } from '@/services/academics.service';
 import { questionsService } from '@/services/questions.service';
 import { teachersService } from '@/services/teachers.service';
 import { useAuth } from '@/hooks/useAuth';
@@ -158,12 +158,25 @@ export default function QuestionBankPage() {
     [isTeacher, visibleSubjects],
   );
 
+  const [chapterFilter, setChapterFilter] = useState<number | ''>('');
+
   const onClassFilterChange = (value: number | '') => {
     setClassFilter(value);
     // A section/subject from the previous class no longer applies.
     setSectionFilter('');
     setSubjectFilter('');
+    setChapterFilter('');
   };
+
+  const onSubjectFilterChange = (value: number | '') => {
+    setSubjectFilter(value);
+    setChapterFilter('');
+  };
+
+  const chaptersQuery = useQuery({
+    queryKey: ['chapters-dropdown', subjectFilter],
+    queryFn: () => chaptersService.list({ subject: subjectFilter || undefined, page_size: 200 }),
+  });
 
   const questionsQuery = useQuery({
     queryKey: [
@@ -171,6 +184,7 @@ export default function QuestionBankPage() {
       {
         search,
         subject: subjectFilter || undefined,
+        chapter: chapterFilter || undefined,
         difficulty: difficultyFilter || undefined,
         status: statusFilter,
       },
@@ -180,6 +194,7 @@ export default function QuestionBankPage() {
         page_size: FETCH_SIZE,
         search: search || undefined,
         subject: subjectFilter || undefined,
+        chapter: chapterFilter || undefined,
         difficulty: difficultyFilter || undefined,
         is_active: statusFilter === 'active',
       }),
@@ -344,6 +359,14 @@ export default function QuestionBankPage() {
     ...visibleSubjects.map((s) => ({ value: String(s.id), label: `${s.name} (${s.class_name})` }))
   ];
 
+  const chapterOptions = [
+    { value: '', label: 'All chapters' },
+    ...(chaptersQuery.data?.results ?? []).map((ch) => ({
+      value: String(ch.id),
+      label: ch.name,
+    })),
+  ];
+
   const difficultyOptions = [
     { value: '', label: 'All difficulties' },
     { value: 'easy', label: 'Easy' },
@@ -423,9 +446,16 @@ export default function QuestionBankPage() {
         <CustomSelect
           options={subjectOptions}
           value={String(subjectFilter)}
-          onChange={(val) => setSubjectFilter(val ? Number(val) : '')}
+          onChange={(val) => onSubjectFilterChange(val ? Number(val) : '')}
           placeholder={isTeacher ? 'Assigned subjects' : 'All subjects'}
           containerClassName="w-56"
+        />
+        <CustomSelect
+          options={chapterOptions}
+          value={String(chapterFilter)}
+          onChange={(val) => setChapterFilter(val ? Number(val) : '')}
+          placeholder="All chapters"
+          containerClassName="w-52"
         />
         <CustomSelect
           options={difficultyOptions}

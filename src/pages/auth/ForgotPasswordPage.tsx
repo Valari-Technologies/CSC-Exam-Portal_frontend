@@ -17,6 +17,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
@@ -28,8 +29,15 @@ export default function ForgotPasswordPage() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    await authService.requestPasswordReset(values.email);
-    setSubmitted(true);
+    try {
+      setError(null);
+      await authService.requestPasswordReset(values.email);
+      setSubmitted(true);
+    } catch (err: any) {
+      const message =
+        err.response?.data?.detail || 'Failed to send reset link. Please try again later.';
+      setError(message);
+    }
   };
 
   return (
@@ -49,6 +57,12 @@ export default function ForgotPasswordPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+          {error && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+
           <AnimatedInput
             label="Email"
             type="email"
