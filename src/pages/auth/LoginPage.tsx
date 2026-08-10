@@ -498,6 +498,14 @@ export default function LoginPage() {
           height: 100%;
           font-family: inherit;
         }
+        .login-text-input:-webkit-autofill,
+        .login-text-input:-webkit-autofill:hover, 
+        .login-text-input:-webkit-autofill:focus, 
+        .login-text-input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+          -webkit-text-fill-color: #1f2937 !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
         .login-text-input::placeholder {
           color: #9ca3af;
         }
@@ -737,6 +745,9 @@ export default function LoginPage() {
             min-height: auto;
             overflow-y: visible;
             padding: 2.5rem 1.5rem 2rem;
+          }
+          .login-card-box {
+            margin: 0 auto;
           }
         }
 

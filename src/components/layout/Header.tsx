@@ -30,6 +30,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   const isTeacher = user?.role === 'teacher';
   const isCscAdmin = user?.role === 'csc_admin';
+  const isSchoolAdmin = user?.role === 'school_admin';
 
   return (
     <>
@@ -46,20 +47,20 @@ export function Header({ onMenuClick }: HeaderProps) {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          {(isTeacher || isCscAdmin) && (
+          {(isTeacher || isCscAdmin || isSchoolAdmin) && (
             <Button
               variant="outline"
               size="icon"
               onClick={() => setGuideModalOpen(true)}
               className="h-9 w-9 rounded-full border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 transition-all flex items-center justify-center cursor-pointer mr-0.5"
-              title={isCscAdmin ? 'Super Admin User Guide' : 'Teacher User Guide'}
-              aria-label={isCscAdmin ? 'Super Admin User Guide' : 'Teacher User Guide'}
+              title={isCscAdmin ? 'Super Admin User Guide' : isSchoolAdmin ? 'School Admin User Guide' : 'Teacher User Guide'}
+              aria-label={isCscAdmin ? 'Super Admin User Guide' : isSchoolAdmin ? 'School Admin User Guide' : 'Teacher User Guide'}
             >
               <HelpCircle className="h-5 w-5" />
             </Button>
           )}
           <NotificationBell />
-          {!isTeacher && !isCscAdmin && (
+          {!isTeacher && !isCscAdmin && !isSchoolAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full" aria-label="User menu">
@@ -123,11 +124,13 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    {isCscAdmin ? 'Super Admin User Guide 👋' : 'Teacher User Guide 👋'}
+                    {isCscAdmin ? 'Super Admin User Guide 👋' : isSchoolAdmin ? 'School Admin User Guide 👋' : 'Teacher User Guide 👋'}
                   </h2>
                   <p className="text-xs text-slate-300 mt-0.5 font-normal">
                     {isCscAdmin
                       ? 'Learn how to manage schools, audit logs, and support requests'
+                      : isSchoolAdmin
+                      ? 'Learn how to manage classes, sections, subjects, teachers, and students'
                       : 'Learn how to manage classes, subjects, question bank, and tests'}
                   </p>
                 </div>
@@ -217,6 +220,85 @@ export function Header({ onMenuClick }: HeaderProps) {
                         </div>
                         <p className="text-xs text-slate-600 leading-relaxed font-medium">
                           Configure your Super Admin settings, password configurations, email preferences, and personal security items inside Profile page.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : isSchoolAdmin ? (
+                <>
+                  {/* School Admin Process Banner */}
+                  <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border border-emerald-100 rounded-2xl p-5">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-3">
+                      <Sparkles className="h-5 w-5 text-emerald-600" />
+                      Quick School Admin Actions (How It Works)
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                      <div className="bg-white/90 p-3 rounded-xl border border-emerald-100/60 flex flex-col items-center text-center">
+                        <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs mb-2">1</span>
+                        <span className="font-bold text-slate-900">Manage Academics</span>
+                        <span className="text-slate-500 mt-1">Configure classes, sections, and subjects.</span>
+                      </div>
+                      <div className="bg-white/90 p-3 rounded-xl border border-emerald-100/60 flex flex-col items-center text-center">
+                        <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs mb-2">2</span>
+                        <span className="font-bold text-slate-900">Manage Teachers</span>
+                        <span className="text-slate-500 mt-1">Add teachers and assign their subjects.</span>
+                      </div>
+                      <div className="bg-white/90 p-3 rounded-xl border border-emerald-100/60 flex flex-col items-center text-center">
+                        <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs mb-2">3</span>
+                        <span className="font-bold text-slate-900">Register Students</span>
+                        <span className="text-slate-500 mt-1">Add students individually or in bulk.</span>
+                      </div>
+                      <div className="bg-white/90 p-3 rounded-xl border border-emerald-100/60 flex flex-col items-center text-center">
+                        <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs mb-2">4</span>
+                        <span className="font-bold text-slate-900">Track Reports</span>
+                        <span className="text-slate-500 mt-1">View overall performance and audit logs.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* School Admin Help Cards */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-black text-slate-400 uppercase tracking-wider">Features & Guides</h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="border border-slate-100 rounded-2xl p-4 space-y-2 bg-slate-50/50">
+                        <div className="flex items-center gap-2 text-emerald-600">
+                          <BookOpen className="h-4 w-4" />
+                          <h5 className="font-bold text-sm text-slate-900">Academics Configuration</h5>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          Use the Academics menu to set up your school classes, sections, and subjects. These configurations are required before adding teachers or students.
+                        </p>
+                      </div>
+
+                      <div className="border border-slate-100 rounded-2xl p-4 space-y-2 bg-slate-50/50">
+                        <div className="flex items-center gap-2 text-emerald-600">
+                          <Users className="h-4 w-4" />
+                          <h5 className="font-bold text-sm text-slate-900">Teachers Management</h5>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          Add school teachers individually, assign them to their corresponding classes/subjects, and track their test creation activities.
+                        </p>
+                      </div>
+
+                      <div className="border border-slate-100 rounded-2xl p-4 space-y-2 bg-slate-50/50">
+                        <div className="flex items-center gap-2 text-emerald-600">
+                          <Users className="h-4 w-4" />
+                          <h5 className="font-bold text-sm text-slate-900">Students & Enrolments</h5>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          Register students in bulk via Excel spreadsheets or add them one-by-one. Manage their credentials and track active profile logs.
+                        </p>
+                      </div>
+
+                      <div className="border border-slate-100 rounded-2xl p-4 space-y-2 bg-slate-50/50">
+                        <div className="flex items-center gap-2 text-emerald-600">
+                          <LifeBuoy className="h-4 w-4" />
+                          <h5 className="font-bold text-sm text-slate-900">Support Requests</h5>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          Submit support queries directly to Super Admins. Track request histories and replies inside the additional details workspace.
                         </p>
                       </div>
                     </div>

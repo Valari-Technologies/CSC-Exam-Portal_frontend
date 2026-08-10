@@ -32,26 +32,20 @@ const studentSchema = z.object({
   school_class: z.number({ required_error: 'Class is required' }),
   section: z.number({ required_error: 'Section is required' }),
   roll_number: z.string().min(1, 'Roll number is required'),
-  admission_number: z.string().optional(),
+  admission_number: z.string().min(1, 'Admission number is required'),
   sub_section_code: z.string().optional().nullable(),
-  date_of_birth: z.string().optional(),
-  gender: z.string().optional(),
-  parent_name: z.string().optional(),
-  parent_phone: z.string().optional(),
+  date_of_birth: z.string().min(1, 'Date of birth is required'),
+  gender: z.string().min(1, 'Gender is required'),
+  parent_name: z.string().min(1, 'Parent name is required'),
+  parent_phone: z.string().min(1, 'Parent phone is required'),
   is_active: z.boolean().default(true),
 });
 
-// Add Student: every field required EXCEPT Email (item 3). Login credentials auto-generate
-// and sub_section_code is conditional, so both stay optional. Enforced with a superRefine
-// so field TS types are unchanged — base and create share one StudentFormValues type. Edit
-// uses the lenient studentSchema so a legacy student with a blank field is still editable.
+// Add Student: every field required. Login credentials auto-generate or must be typed.
 const createStudentSchema = studentSchema.superRefine((val, ctx) => {
   const required: [keyof z.infer<typeof studentSchema>, string][] = [
-    ['admission_number', 'Admission number is required'],
-    ['date_of_birth', 'Date of birth is required'],
-    ['gender', 'Gender is required'],
-    ['parent_name', 'Parent name is required'],
-    ['parent_phone', 'Parent phone is required'],
+    ['student_id', 'Student ID is required'],
+    ['password', 'Password is required'],
   ];
   for (const [field, message] of required) {
     if (!val[field]) {
@@ -189,13 +183,28 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
     setIsGeneratingId(true);
     try {
       const nextId = await studentsService.nextStudentId(isCSCAdmin ? selectedSchool : undefined);
-      setValue('student_id', nextId);
+      setValue('student_id', nextId, { shouldValidate: true });
     } catch {
       setError('student_id', { message: 'Could not generate an ID. Enter one manually.' });
     } finally {
       setIsGeneratingId(false);
     }
   };
+
+  // Auto-generate credentials on mount/school selection if creating a student
+  useEffect(() => {
+    if (!initialData) {
+      if (!isCSCAdmin || selectedSchool) {
+        handleGenerateStudentId();
+      }
+    }
+  }, [initialData, selectedSchool, isCSCAdmin]);
+
+  useEffect(() => {
+    if (!initialData) {
+      setValue('password', generatePassword(), { shouldValidate: true });
+    }
+  }, [initialData]);
 
   const handleFormSubmit = async (data: StudentFormValues) => {
     try {
@@ -354,12 +363,7 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="admission_number">
-                Admission Number{' '}
-                {initialData ? (
-                  <span className="text-muted-foreground font-normal">(optional)</span>
-                ) : (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
+                Admission Number <span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input id="admission_number" {...register('admission_number')} />
               {errors.admission_number && (
@@ -368,12 +372,7 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="date_of_birth">
-                Date of Birth{' '}
-                {initialData ? (
-                  <span className="text-muted-foreground font-normal">(optional)</span>
-                ) : (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
+                Date of Birth <span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input id="date_of_birth" type="date" {...register('date_of_birth')} />
               {errors.date_of_birth && (
@@ -382,12 +381,7 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="gender">
-                Gender{' '}
-                {initialData ? (
-                  <span className="text-muted-foreground font-normal">(optional)</span>
-                ) : (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
+                Gender <span className="ml-0.5 text-destructive">*</span>
               </Label>
               <input type="hidden" {...register('gender')} />
               <CustomSelect
@@ -405,12 +399,7 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="parent_name">
-                Parent Name{' '}
-                {initialData ? (
-                  <span className="text-muted-foreground font-normal">(optional)</span>
-                ) : (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
+                Parent Name <span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input id="parent_name" {...register('parent_name')} />
               {errors.parent_name && (
@@ -419,12 +408,7 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="parent_phone">
-                Parent Phone{' '}
-                {initialData ? (
-                  <span className="text-muted-foreground font-normal">(optional)</span>
-                ) : (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
+                Parent Phone <span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input id="parent_phone" {...register('parent_phone')} />
               {errors.parent_phone && (
@@ -443,7 +427,9 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="student_id">Student ID</Label>
+                <Label htmlFor="student_id">
+                  Student ID <span className="ml-0.5 text-destructive">*</span>
+                </Label>
                 <div className="flex gap-2">
                   <Input id="student_id" placeholder="Auto-generated" {...register('student_id')} />
                   <Button
@@ -456,13 +442,17 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
                   </Button>
                 </div>
                 {errors.student_id && <p className="text-xs text-destructive">{errors.student_id.message}</p>}
-                <p className="text-xs text-muted-foreground">
-                  Leave blank to generate one automatically.
-                </p>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">
+                  Password{' '}
+                  {initialData ? (
+                    <span className="text-muted-foreground font-normal">(optional)</span>
+                  ) : (
+                    <span className="ml-0.5 text-destructive">*</span>
+                  )}
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     id="password"
@@ -486,7 +476,7 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
                 <p className="text-xs text-muted-foreground">
                   {initialData
                     ? 'Leave blank to keep the current password.'
-                    : 'Leave blank to generate one. Shown once after saving.'}
+                    : 'Shown once after saving.'}
                   {' '}
                   {PASSWORD_RULES_HINT}
                 </p>

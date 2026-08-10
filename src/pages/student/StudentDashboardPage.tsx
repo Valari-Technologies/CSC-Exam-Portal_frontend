@@ -154,7 +154,7 @@ export default function StudentDashboardPage() {
       icon: User,
       iconWrapperClass: 'bg-[#dbeafe] text-[#2563eb]',
       hoverButtonClass: 'group-hover:bg-[#2563eb] group-hover:text-white',
-      to: '/profile',
+      to: '/student/profile',
       bgImage: card04Img,
     },
   ];

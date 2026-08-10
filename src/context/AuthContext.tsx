@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  // Inactivity auto-logout after 20 minutes of no user interaction
+  // Inactivity auto-logout after 1 hour of no user interaction
   useEffect(() => {
     if (!user) return;
 
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(timeoutId);
       timeoutId = window.setTimeout(() => {
         logout();
-      }, 20 * 60 * 1000); // 20 minutes
+      }, 60 * 60 * 1000); // 1 hour
     };
 
     const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];

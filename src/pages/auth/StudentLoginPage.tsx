@@ -499,6 +499,14 @@ export default function StudentLoginPage() {
           height: 100%;
           font-family: inherit;
         }
+        .sl-text-input:-webkit-autofill,
+        .sl-text-input:-webkit-autofill:hover, 
+        .sl-text-input:-webkit-autofill:focus, 
+        .sl-text-input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+          -webkit-text-fill-color: #1f2937 !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
         .sl-text-input::placeholder {
           color: #9ca3af;
         }
@@ -738,6 +746,9 @@ export default function StudentLoginPage() {
             min-height: auto;
             overflow-y: visible;
             padding: 2.5rem 1.5rem 2rem;
+          }
+          .sl-card-box {
+            margin: 0 auto;
           }
         }
 

@@ -12,6 +12,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import { useAuth } from '@/hooks/useAuth';
+import { teachersService } from '@/services/teachers.service';
 import {
   Dialog,
   DialogContent,
@@ -78,11 +81,26 @@ function StudentDetailsDialog({
   profileId: number | null;
   onClose: () => void;
 }) {
+  const { user } = useAuth();
+  const isTeacher = user?.role === 'teacher';
+
+  const assignmentsQuery = useQuery({
+    queryKey: ['teacher-my-assignments'],
+    queryFn: () => teachersService.listAssignments({ page_size: 100 }),
+    enabled: isTeacher && profileId !== null,
+  });
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['student-detail', profileId],
     queryFn: () => studentsService.get(profileId as number),
     enabled: profileId !== null,
   });
+
+  const isAssigned = !data || !isTeacher || (
+    assignmentsQuery.data?.results || []
+  ).some(
+    (a) => a.school_class === data.school_class && (a.section === null || a.section === data.section)
+  );
 
   const rows: [string, string][] = data
     ? [
@@ -109,12 +127,16 @@ function StudentDetailsDialog({
         <DialogHeader>
           <DialogTitle>Student Details</DialogTitle>
         </DialogHeader>
-        {isLoading ? (
+        {isLoading || (isTeacher && assignmentsQuery.isLoading) ? (
           <div className="py-8">
             <Spinner label="Loading student..." />
           </div>
         ) : isError || !data ? (
           <p className="py-6 text-sm text-destructive">Failed to load this student.</p>
+        ) : !isAssigned ? (
+          <div className="py-8 text-center">
+            <p className="text-sm font-semibold text-rose-600">Please contact admin office</p>
+          </div>
         ) : (
           <dl className="divide-y divide-border text-sm">
             {rows.map(([label, value]) => (
@@ -183,10 +205,31 @@ export default function AssignTestPage() {
     }
   }, [test, setValue]);
 
+  const { user } = useAuth();
+  const isTeacher = user?.role === 'teacher';
+
+  const assignmentsQuery = useQuery({
+    queryKey: ['teacher-my-assignments'],
+    queryFn: () => teachersService.listAssignments({ page_size: 100 }),
+    enabled: isTeacher,
+  });
+
   const classesQuery = useQuery({
     queryKey: ['classes-dropdown'],
     queryFn: () => classesService.list({ page_size: 100 }),
+    enabled: !isTeacher,
   });
+
+  const assignedClasses = isTeacher
+    ? Array.from(
+        new Map(
+          (assignmentsQuery.data?.results || []).map((a) => [
+            a.school_class,
+            { id: a.school_class, name: a.class_name }
+          ])
+        ).values()
+      )
+    : null;
 
   const sectionsQuery = useQuery({
     queryKey: ['sections-dropdown', selectedClass],
@@ -229,6 +272,15 @@ export default function AssignTestPage() {
       if (!student) {
         setLookupError(`No student found with ID "${studentId}".`);
         return;
+      }
+      if (isTeacher) {
+        const isAssigned = (assignmentsQuery.data?.results || []).some(
+          (a) => a.school_class === student.school_class && (a.section === null || a.section === student.section)
+        );
+        if (!isAssigned) {
+          setLookupError('This student is not assigned to you.');
+          return;
+        }
       }
       if (!student.is_active) {
         // The API rejects inactive students anyway; saying so here beats a form
@@ -289,6 +341,23 @@ export default function AssignTestPage() {
   if (testLoading) return <Spinner label="Loading test..." />;
   if (!test) return <p className="text-sm text-destructive">Test not found.</p>;
 
+  const teacherHasWholeClass = isTeacher
+    ? (assignmentsQuery.data?.results || []).some((a) => a.school_class === selectedClass && a.section === null)
+    : false;
+
+  const teacherSectionIds = isTeacher
+    ? new Set(
+        (assignmentsQuery.data?.results || [])
+          .filter((a) => a.school_class === selectedClass && a.section !== null)
+          .map((a) => a.section)
+      )
+    : null;
+
+  const filteredSections = sectionsQuery.data?.results.filter((s) => {
+    if (!isTeacher || teacherHasWholeClass) return true;
+    return teacherSectionIds?.has(s.id);
+  }) || [];
+
   return (
     <Card className="max-w-2xl">
       <CardHeader>
@@ -340,38 +409,40 @@ export default function AssignTestPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="school_class">Class</Label>
-                <select
+                <CustomSelect
                   id="school_class"
-                  value={selectedClass ?? ''}
-                  onChange={(e) => {
-                    setValue('school_class', Number(e.target.value));
+                  options={[
+                    { value: '', label: 'Select class' },
+                    ...(isTeacher
+                      ? (assignedClasses?.map((c) => ({ value: String(c.id), label: c.name })) || [])
+                      : (classesQuery.data?.results.map((c) => ({ value: String(c.id), label: classLabel(c) })) || []))
+                  ]}
+                  value={selectedClass ? String(selectedClass) : ''}
+                  onChange={(val) => {
+                    setValue('school_class', val ? Number(val) : null);
                     setValue('section', null);
                   }}
-                  className="w-full py-2 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="">Select class</option>
-                  {classesQuery.data?.results.map((c) => (
-                    <option key={c.id} value={c.id}>{classLabel(c)}</option>
-                  ))}
-                </select>
+                  containerClassName="w-full"
+                />
                 {errors.school_class && <p className="text-xs text-destructive">{errors.school_class.message}</p>}
               </div>
 
               {assignedToType === 'section' && (
                 <div className="space-y-1.5">
                   <Label htmlFor="section">Section</Label>
-                  <select
+                  <CustomSelect
                     id="section"
-                    value={watch('section') ?? ''}
-                    onChange={(e) => setValue('section', e.target.value ? Number(e.target.value) : null)}
-                    className="w-full py-2 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    options={[
+                      { value: '', label: 'Select section' },
+                      ...(filteredSections.map((s) => ({ value: String(s.id), label: s.name })) || [])
+                    ]}
+                    value={watch('section') ? String(watch('section')) : ''}
                     disabled={!selectedClass}
-                  >
-                    <option value="">Select section</option>
-                    {sectionsQuery.data?.results.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => {
+                      setValue('section', val ? Number(val) : null);
+                    }}
+                    containerClassName="w-full"
+                  />
                   {errors.section && <p className="text-xs text-destructive">{errors.section.message}</p>}
                 </div>
               )}

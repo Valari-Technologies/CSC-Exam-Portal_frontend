@@ -21,8 +21,10 @@ import {
   LogOut,
   type LucideIcon,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentSchool } from '@/hooks/useCurrentSchool';
+import { notificationsService } from '@/services/notifications.service';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import defaultSchoolLogo from '@/assets/csc_school_logo.webp';
 import superAdminLogo from '@/assets/dashboard_designs/Super admin/super_admin_logo.webp';
@@ -58,6 +60,33 @@ const NAV_ITEMS: NavItem[] = [
 
 const COLLAPSE_KEY = 'sidebar-collapsed';
 
+const ROOT_PATHS = [
+  '/',
+  '/dashboard',
+  '/admin/dashboard',
+  '/school/dashboard',
+  '/teacher/dashboard',
+  '/student/dashboard',
+  '/admin/schools',
+  '/school/academics',
+  '/school/teachers',
+  '/school/students',
+  '/questions',
+  '/tests',
+  '/reports',
+  '/profile',
+  '/notifications',
+  '/admin/audit-logs',
+  '/admin/support-requests',
+  '/school/additional-details',
+  '/student/exams',
+  '/student/results',
+  '/student/notifications',
+  '/student/profile',
+  '/teacher/completed-exams',
+  '/teacher/published-results',
+];
+
 interface SidebarProps {
   /** When true, the off-canvas mobile drawer is shown (below the md breakpoint). */
   mobileOpen?: boolean;
@@ -74,6 +103,19 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState<boolean>(
     () => localStorage.getItem(COLLAPSE_KEY) === '1',
   );
+
+  const normalizedPath = location.pathname.endsWith('/') && location.pathname.length > 1
+    ? location.pathname.slice(0, -1)
+    : location.pathname;
+  const isSecondPage = !ROOT_PATHS.includes(normalizedPath);
+
+  const { data: unreadData } = useQuery({
+    queryKey: ['notifications-unread-count'],
+    queryFn: () => notificationsService.unreadCount(),
+    enabled: !!user,
+    refetchInterval: 30 * 1000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
 
   if (!user) return null;
 
@@ -162,7 +204,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <h2 className="font-bold text-sm text-white truncate" title={title}>
+                    <h2 className="font-bold text-sm text-white whitespace-normal break-words leading-tight" title={title}>
                       {title}
                     </h2>
                     <p className="text-xs text-slate-400 font-medium">
@@ -175,7 +217,11 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           )}
 
           {/* Dark Sidebar Navigation Items */}
-          <nav className={cn("flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-1.5 custom-scrollbar", hasTabbedActiveStyle ? "pl-3 pr-0" : "px-3")}>
+          <nav className={cn(
+            "flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-1.5 custom-scrollbar",
+            hasTabbedActiveStyle ? "pl-3 pr-0" : "px-3",
+            isSecondPage && "pointer-events-none opacity-50"
+          )}>
             {items.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
@@ -193,7 +239,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
 
                   if (hasTabbedActiveStyle) {
                     return cn(
-                      'flex items-center gap-3.5 text-sm font-semibold transition-all duration-300 ease-out cursor-pointer group/item',
+                      'relative flex items-center gap-3.5 text-sm font-semibold transition-all duration-300 ease-out cursor-pointer group/item',
                       isCollapsed ? 'justify-center px-2 py-3 rounded-xl mx-2' : 'py-3 pl-4 pr-5',
                       active
                         ? 'bg-white text-[#0a0d4a] font-extrabold shadow-md rounded-l-2xl rounded-r-none md:-mr-0.5'
@@ -202,7 +248,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                   }
                   // Teacher Active / Inactive styles
                   return cn(
-                    'flex items-center gap-3.5 text-sm font-semibold transition-all duration-300 ease-out cursor-pointer group/item',
+                    'relative flex items-center gap-3.5 text-sm font-semibold transition-all duration-300 ease-out cursor-pointer group/item',
                     isCollapsed ? 'justify-center p-3 rounded-xl' : 'py-3 px-4 rounded-2xl',
                     active
                       ? 'bg-[#2563eb] text-white font-extrabold shadow-md shadow-blue-500/25'
@@ -212,11 +258,21 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
               >
                 <Icon className="h-5 w-5 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-300" />
                 {!isCollapsed && <span className="truncate">{label}</span>}
+                {label === 'Notifications' && unreadCount > 0 && (
+                  <span
+                    className={cn(
+                      "bg-[#8b5cf6] text-white text-xs font-bold rounded-full min-w-[20px] text-center shadow-sm flex items-center justify-center",
+                      isCollapsed ? "absolute top-1 right-1 h-4 px-1 text-[9px]" : "h-5 px-1.5 ml-auto"
+                    )}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
           {user !== null ? (
-            <div className={cn("mt-auto mb-4 relative z-50", isCollapsed ? "px-2" : "px-4")}>
+            <div className={cn("mt-auto mb-4 relative z-50", isCollapsed ? "px-2" : "px-4", isSecondPage && "pointer-events-none opacity-50")}>
               <div
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                 className={cn(

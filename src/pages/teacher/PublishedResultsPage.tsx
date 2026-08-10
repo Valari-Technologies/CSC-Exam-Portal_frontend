@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Award, Download, FileSpreadsheet, FileText, Search } from 'lucide-react';
 import publishedResultsHeaderImg from '@/assets/dashboard_designs/Teacher/Published Results.webp';
@@ -16,9 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table';
-import { classesService, sectionsService, subjectsService } from '@/services/academics.service';
+import { classesService, sectionsService, subjectsService, chaptersService } from '@/services/academics.service';
 import { resultsService, type ExportFormat, type ResultListParams } from '@/services/results.service';
-import { classLabel } from '@/lib/utils';
+import { classLabel, cn } from '@/lib/utils';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 function formatDate(iso: string | null): string {
@@ -32,7 +33,8 @@ export default function PublishedResultsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState('student_name');
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [classFilter, setClassFilter] = useState('');
   const [sectionFilter, setSectionFilter] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
@@ -57,6 +59,17 @@ export default function PublishedResultsPage() {
         ...(classFilter ? { school_class: Number(classFilter) } : {}),
       }),
   });
+
+  const chaptersQuery = useQuery({
+    queryKey: ['chapters-dropdown'],
+    queryFn: () => chaptersService.list({ page_size: 200 }),
+    enabled: searchType === 'chapter_name',
+  });
+
+  const chaptersList = chaptersQuery.data?.results ?? [];
+  const filteredChapters = chaptersList.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   const queryParams: ResultListParams = {
     page,
@@ -146,68 +159,130 @@ export default function PublishedResultsPage() {
 
       {/* filters */}
       <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-xs grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
-        <div className="space-y-1 col-span-2 relative">
-          <Label htmlFor="search" className="text-xs font-black text-slate-550 uppercase tracking-wider">
+        <div className="space-y-1 col-span-2">
+          <Label htmlFor="search" className="text-xs font-black text-slate-555 uppercase tracking-wider">
             Search By {searchType === 'student_name' ? 'Student Name' : searchType === 'chapter_name' ? 'Chapter Name' : 'Student ID'}
           </Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <Input
-              id="search"
-              className="pl-9 py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 w-full"
-              placeholder={
-                searchType === 'student_name' ? 'Search student name...' :
-                searchType === 'chapter_name' ? 'Search chapter name...' :
-                'Search student ID...'
-              }
-              value={search}
-              onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-              onChange={(e) => { setSearch(e.target.value); resetPage(); }}
-            />
-            {showDropdown && (
-              <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                <button
-                  type="button"
-                  onMouseDown={() => {
-                    setSearchType('student_name');
-                    setShowDropdown(false);
-                    resetPage();
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 font-bold ${
-                    searchType === 'student_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
-                  }`}
-                >
-                  Student Name
-                </button>
-                <button
-                  type="button"
-                  onMouseDown={() => {
-                    setSearchType('chapter_name');
-                    setShowDropdown(false);
-                    resetPage();
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 font-bold ${
-                    searchType === 'chapter_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
-                  }`}
-                >
-                  Chapter Name
-                </button>
-                <button
-                  type="button"
-                  onMouseDown={() => {
-                    setSearchType('student_id');
-                    setShowDropdown(false);
-                    resetPage();
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 font-bold ${
-                    searchType === 'student_id' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
-                  }`}
-                >
-                  Student ID
-                </button>
-              </div>
-            )}
+          <div className="flex gap-2 relative">
+            {/* Category Select Dropdown */}
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCategoryDropdown(!showCategoryDropdown);
+                  setShowSuggestions(false);
+                }}
+                className="flex items-center justify-between gap-1.5 h-10 px-3 bg-slate-55 border border-slate-200 rounded-xl text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors w-32"
+              >
+                <span className="truncate">
+                  {searchType === 'student_name' ? 'Student Name' : searchType === 'chapter_name' ? 'Chapter Name' : 'Student ID'}
+                </span>
+                <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showCategoryDropdown && (
+                <div className="absolute left-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden py-1">
+                  <button
+                    type="button"
+                    onMouseDown={() => {
+                      setSearchType('student_name');
+                      setSearch('');
+                      setShowCategoryDropdown(false);
+                      resetPage();
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${
+                      searchType === 'student_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                    }`}
+                  >
+                    Student Name
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={() => {
+                      setSearchType('chapter_name');
+                      setSearch('');
+                      setShowCategoryDropdown(false);
+                      resetPage();
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${
+                      searchType === 'chapter_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                    }`}
+                  >
+                    Chapter Name
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={() => {
+                      setSearchType('student_id');
+                      setSearch('');
+                      setShowCategoryDropdown(false);
+                      resetPage();
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${
+                      searchType === 'student_id' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                    }`}
+                  >
+                    Student ID
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Input with Suggestions dropdown */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                id="search"
+                autoComplete="off"
+                className="pl-9 py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 w-full"
+                placeholder={
+                  searchType === 'student_name' ? 'Search student name...' :
+                  searchType === 'chapter_name' ? 'Search chapter name...' :
+                  'Search student ID...'
+                }
+                value={search}
+                onFocus={() => {
+                  if (searchType === 'chapter_name') {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  setTimeout(() => {
+                    setShowSuggestions(false);
+                    setShowCategoryDropdown(false);
+                  }, 200);
+                }}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  resetPage();
+                  if (searchType === 'chapter_name') {
+                    setShowSuggestions(true);
+                  }
+                }}
+              />
+
+              {showSuggestions && searchType === 'chapter_name' && filteredChapters.length > 0 && (
+                <div className="absolute left-0 right-0 mt-1 max-h-60 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-y-auto py-1">
+                  {filteredChapters.map((chapter) => (
+                    <button
+                      key={chapter.id}
+                      type="button"
+                      onMouseDown={() => {
+                        setSearch(chapter.name);
+                        setShowSuggestions(false);
+                        resetPage();
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-slate-50 last:border-0"
+                    >
+                      <div className="font-semibold text-slate-800">{chapter.name}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">{chapter.subject_name}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <div className="space-y-1">
@@ -247,7 +322,7 @@ export default function PublishedResultsPage() {
         </div>
         <div className="space-y-1">
           <Label htmlFor="date_to" className="text-xs font-black text-slate-550 uppercase tracking-wider">To</Label>
-          <Input id="date_to" type="date" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateTo} onChange={(e) => { setDateTo(e.target.value); resetPage(); }} />
+          <Input id="date_to" type="date" align="right" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateTo} onChange={(e) => { setDateTo(e.target.value); resetPage(); }} />
         </div>
       </div>
 
@@ -274,6 +349,7 @@ export default function PublishedResultsPage() {
                 <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Percentage</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Result</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Published</TableHead>
+                <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -290,15 +366,27 @@ export default function PublishedResultsPage() {
                   <TableCell className="font-semibold text-slate-900 py-3.5">{r.subject_name}</TableCell>
                   <TableCell className="font-semibold text-slate-900 py-3.5">{r.test_title}</TableCell>
                   <TableCell className="text-right font-bold text-indigo-600 py-3.5">
-                    {parseFloat(r.obtained_marks).toFixed(1)} / {parseFloat(r.total_marks).toFixed(1)}
+                    {r.obtained_marks !== null
+                      ? `${parseFloat(r.obtained_marks).toFixed(1)} / ${parseFloat(r.total_marks ?? '0').toFixed(1)}`
+                      : '--'}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-emerald-600 py-3.5">{parseFloat(r.percentage).toFixed(1)}%</TableCell>
+                  <TableCell className={cn(
+                    "text-right font-bold py-3.5",
+                    r.passed ? "text-emerald-600" : "text-rose-600"
+                  )}>
+                    {parseFloat(r.percentage).toFixed(1)}%
+                  </TableCell>
                   <TableCell className="py-3.5">
                     <Badge variant={r.passed ? 'success' : 'destructive'}>
                       {r.passed ? 'Pass' : 'Fail'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm font-semibold text-slate-900 py-3.5">{formatDate(r.published_at)}</TableCell>
+                  <TableCell className="text-right py-3.5">
+                    <Button asChild variant="outline" size="sm">
+                      <Link to={`/teacher/evaluate/${r.id}`}>View</Link>
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

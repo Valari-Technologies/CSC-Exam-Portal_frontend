@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { classesService, subjectsService } from '@/services/academics.service';
+import { teachersService } from '@/services/teachers.service';
+import { useAuth } from '@/hooks/useAuth';
 import { classLabel } from '@/lib/utils';
 import type { TestDetail, TestWriteRequest } from '@/types';
 
@@ -95,17 +97,27 @@ export default function TestForm({ initialData, onSubmit, isSubmitting, title }:
     },
   });
 
+  const { user } = useAuth();
+  const isTeacher = user?.role === 'teacher';
+
   const selectedClass = watch('school_class');
+
+  const assignmentsQuery = useQuery({
+    queryKey: ['teacher-my-assignments'],
+    queryFn: () => teachersService.listAssignments({ page_size: 100 }),
+    enabled: isTeacher,
+  });
 
   const classesQuery = useQuery({
     queryKey: ['classes-dropdown'],
     queryFn: () => classesService.list({ page_size: 100 }),
+    enabled: !isTeacher,
   });
 
   const subjectsQuery = useQuery({
     queryKey: ['subjects-dropdown', selectedClass],
     queryFn: () => subjectsService.list({ school_class: selectedClass, page_size: 100 }),
-    enabled: !!selectedClass,
+    enabled: !isTeacher && !!selectedClass,
   });
 
   useEffect(() => {
@@ -158,6 +170,23 @@ export default function TestForm({ initialData, onSubmit, isSubmitting, title }:
     }
   };
 
+  const assignedClasses = isTeacher
+    ? Array.from(
+        new Map(
+          (assignmentsQuery.data?.results || []).map((a) => [
+            a.school_class,
+            { id: a.school_class, name: a.class_name }
+          ])
+        ).values()
+      )
+    : null;
+
+  const assignedSubjects = isTeacher
+    ? (assignmentsQuery.data?.results || [])
+        .filter((a) => a.school_class === selectedClass && a.subject !== null)
+        .map((a) => ({ id: a.subject as number, name: a.subject_name || '' }))
+    : null;
+
   return (
     <Card className="max-w-2xl bg-[#F1EFFE]">
       <CardHeader>
@@ -187,7 +216,9 @@ export default function TestForm({ initialData, onSubmit, isSubmitting, title }:
               <CustomSelect
                 options={[
                   { value: '', label: 'Select class' },
-                  ...(classesQuery.data?.results.map((c) => ({ value: String(c.id), label: classLabel(c) })) || [])
+                  ...(isTeacher
+                    ? (assignedClasses?.map((c) => ({ value: String(c.id), label: c.name })) || [])
+                    : (classesQuery.data?.results.map((c) => ({ value: String(c.id), label: classLabel(c) })) || []))
                 ]}
                 value={String(selectedClass ?? '')}
                 onChange={(val) => {
@@ -205,7 +236,9 @@ export default function TestForm({ initialData, onSubmit, isSubmitting, title }:
               <CustomSelect
                 options={[
                   { value: '', label: 'Select subject' },
-                  ...(subjectsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || [])
+                  ...(isTeacher
+                    ? (assignedSubjects?.map((s) => ({ value: String(s.id), label: s.name })) || [])
+                    : (subjectsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || []))
                 ]}
                 value={String(watch('subject') ?? '')}
                 disabled={!selectedClass}

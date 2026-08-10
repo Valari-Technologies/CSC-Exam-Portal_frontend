@@ -12,13 +12,31 @@ import superadminBg from '@/assets/dashboard_designs/background/superadmin_bg.jp
 import teacherBg from '@/assets/dashboard_designs/background/teacher_bg.jpeg';
 import studentBg from '@/assets/dashboard_designs/background/student_bg.jpeg';
 
-// Dashboards are the "home" of each role — the one place a Back button doesn't belong.
-const DASHBOARD_PATHS = [
+const ROOT_PATHS = [
+  '/',
   '/dashboard',
   '/admin/dashboard',
   '/school/dashboard',
   '/teacher/dashboard',
   '/student/dashboard',
+  '/admin/schools',
+  '/school/academics',
+  '/school/teachers',
+  '/school/students',
+  '/questions',
+  '/tests',
+  '/reports',
+  '/profile',
+  '/notifications',
+  '/admin/audit-logs',
+  '/admin/support-requests',
+  '/school/additional-details',
+  '/student/exams',
+  '/student/results',
+  '/student/notifications',
+  '/student/profile',
+  '/teacher/completed-exams',
+  '/teacher/published-results',
 ];
 
 export function MainLayout() {
@@ -30,9 +48,10 @@ export function MainLayout() {
   const { user } = useAuth();
   const isTeacher = user?.role === 'teacher';
 
-  // One Back button for the whole app, shown on every page except the dashboards. Pages
-  // that used to carry their own generic back arrow have had it removed so it isn't doubled.
-  const showBack = !DASHBOARD_PATHS.includes(location.pathname);
+  const normalizedPath = location.pathname.endsWith('/') && location.pathname.length > 1
+    ? location.pathname.slice(0, -1)
+    : location.pathname;
+  const showBack = !ROOT_PATHS.includes(normalizedPath);
 
   const getLayoutBg = () => {
     if (!user) return defaultBg;

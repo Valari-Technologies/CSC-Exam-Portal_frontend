@@ -277,7 +277,7 @@ export default function ProfilePage() {
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h2 className="font-bold text-sm text-white truncate" title={schoolName}>
+              <h2 className="font-bold text-sm text-white whitespace-normal break-words leading-tight" title={schoolName}>
                 {schoolName}
               </h2>
               <p className="text-xs text-slate-400 font-medium">Student</p>
