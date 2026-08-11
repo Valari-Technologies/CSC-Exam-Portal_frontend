@@ -39,6 +39,7 @@ const chapterSchema = z.object({
   subject: z.coerce.number().int().positive('Select a subject'),
   name: z.string().min(1, 'Required').max(200),
   description: z.string().optional().default(''),
+  lessons: z.array(z.string()).optional().default([]),
   is_active: z.boolean(),
 });
 
@@ -58,6 +59,7 @@ export default function ChapterManagementPage() {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Chapter | null>(null);
   const [creating, setCreating] = useState(false);
+  const [viewingLessonsChapter, setViewingLessonsChapter] = useState<Chapter | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Chapter | null>(null);
   const [pendingStatus, setPendingStatus] = useState<{ chapter: Chapter; activate: boolean } | null>(null);
   const queryClient = useQueryClient();
@@ -263,6 +265,13 @@ export default function ChapterManagementPage() {
             containerClassName="w-64"
           />
         )}
+        <input
+          type="search"
+          placeholder="Search chapters..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="py-2 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring w-56"
+        />
         <CustomSelect
           options={classOptions}
           value={String(classFilter)}
@@ -276,13 +285,6 @@ export default function ChapterManagementPage() {
           onChange={(val) => setSubjectFilter(val ? Number(val) : '')}
           placeholder="Filter by subject..."
           containerClassName="w-56"
-        />
-        <input
-          type="search"
-          placeholder="Search chapters..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="py-2 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring w-56"
         />
       </div>
 
@@ -300,8 +302,9 @@ export default function ChapterManagementPage() {
                 <TableHead className="w-16 text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">S.No</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Subject</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Chapter</TableHead>
+                <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Lessons</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Status</TableHead>
-                {showActions && <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>}
+                {showActions && <TableHead className="text-center text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -309,14 +312,23 @@ export default function ChapterManagementPage() {
                 <TableRow key={ch.id}>
                   <TableCell className="text-muted-foreground tabular-nums font-semibold py-3.5">{index + 1}</TableCell>
                   <TableCell className="font-bold text-slate-900 py-3.5">{ch.subject_name}</TableCell>
-                  <TableCell className="font-bold text-slate-900 py-3.5">{ch.name}</TableCell>
+                  <TableCell className="py-3.5">
+                    <button
+                      type="button"
+                      onClick={() => setViewingLessonsChapter(ch)}
+                      className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-left outline-none cursor-pointer"
+                    >
+                      {ch.name}
+                    </button>
+                  </TableCell>
+                  <TableCell className="font-bold text-slate-900 py-3.5">{ch.lessons?.length || 0}</TableCell>
                   <TableCell className="py-3.5">
                     <Badge variant={ch.is_active ? 'success' : 'secondary'}>
                       {ch.is_active ? 'active' : 'inactive'}
                     </Badge>
                   </TableCell>
                   {showActions && (
-                    <TableCell className="text-right py-3.5">
+                    <TableCell className="text-center py-3.5">
                       {canManageChapter(ch) && (
                         <>
                           <Button variant="ghost" size="icon" onClick={() => setEditing(ch)} aria-label="Edit">
@@ -360,6 +372,34 @@ export default function ChapterManagementPage() {
         onClose={() => { setCreating(false); setEditing(null); }}
         onSaved={() => queryClient.invalidateQueries({ queryKey: ['chapters'] })}
       />
+
+      <Dialog open={viewingLessonsChapter !== null} onOpenChange={(o) => !o && setViewingLessonsChapter(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Lessons in {viewingLessonsChapter?.name}</DialogTitle>
+            <DialogDescription>
+              List of topics and lessons covered under this chapter.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {!viewingLessonsChapter?.lessons || viewingLessonsChapter.lessons.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-4">No lessons added to this chapter yet.</p>
+            ) : (
+              <ul className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                {viewingLessonsChapter.lessons.map((lesson, idx) => (
+                  <li key={idx} className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-100 text-sm font-semibold text-slate-700">
+                    <span className="text-indigo-500 font-mono text-xs w-4">{idx + 1}.</span>
+                    <span>{lesson}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingLessonsChapter(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={pendingStatus !== null} onOpenChange={(o) => !o && setPendingStatus(null)}>
         <DialogContent>
@@ -429,6 +469,7 @@ function ChapterDialog({ open, initial, classes, subjects, defaultSubjectId, onC
   const [formError, setFormError] = useState<string | null>(null);
   // Class is a UI-only field that narrows the Subject dropdown; only `subject` is submitted.
   const [selectedClass, setSelectedClass] = useState<number | ''>('');
+  const [newLesson, setNewLesson] = useState('');
 
   const {
     register,
@@ -440,8 +481,24 @@ function ChapterDialog({ open, initial, classes, subjects, defaultSubjectId, onC
     formState: { errors, isSubmitting },
   } = useForm<ChapterFormValues>({
     resolver: zodResolver(chapterSchema),
-    defaultValues: { subject: 0, name: '', description: '', is_active: true },
+    defaultValues: { subject: 0, name: '', description: '', lessons: [], is_active: true },
   });
+
+  const lessons = watch('lessons') || [];
+
+  const handleAddLesson = () => {
+    if (newLesson.trim()) {
+      if (lessons.includes(newLesson.trim())) {
+        return; // Avoid duplicates
+      }
+      setValue('lessons', [...lessons, newLesson.trim()]);
+      setNewLesson('');
+    }
+  };
+
+  const handleRemoveLesson = (index: number) => {
+    setValue('lessons', lessons.filter((_, i) => i !== index));
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -452,6 +509,7 @@ function ChapterDialog({ open, initial, classes, subjects, defaultSubjectId, onC
         subject: initial.subject,
         name: initial.name,
         description: initial.description,
+        lessons: initial.lessons || [],
         is_active: initial.is_active,
       });
     } else {
@@ -461,10 +519,12 @@ function ChapterDialog({ open, initial, classes, subjects, defaultSubjectId, onC
         subject: preset?.id ?? 0,
         name: '',
         description: '',
+        lessons: [],
         is_active: true,
       });
     }
     setFormError(null);
+    setNewLesson('');
   }, [open, initial, defaultSubjectId, subjects, reset]);
 
   // Subjects belonging to the class in focus (the `subjects` list is already role-scoped
@@ -478,6 +538,7 @@ function ChapterDialog({ open, initial, classes, subjects, defaultSubjectId, onC
       subject: values.subject,
       name: values.name,
       description: values.description ?? '',
+      lessons: values.lessons ?? [],
       is_active: values.is_active,
     };
     try {
@@ -503,7 +564,7 @@ function ChapterDialog({ open, initial, classes, subjects, defaultSubjectId, onC
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{initial ? `Edit ${initial.name}` : 'New Chapter'}</DialogTitle>
         </DialogHeader>
@@ -511,47 +572,78 @@ function ChapterDialog({ open, initial, classes, subjects, defaultSubjectId, onC
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="block text-sm font-medium">Class</label>
-              <select
-                className="w-full px-4 py-3 rounded-xl border-2 border-input bg-background focus:border-primary outline-none"
-                value={selectedClass}
-                onChange={(e) => {
-                  setSelectedClass(e.target.value ? Number(e.target.value) : '');
+              <CustomSelect
+                options={classes.map((c) => ({ value: String(c.id), label: c.label }))}
+                value={selectedClass ? String(selectedClass) : ''}
+                onChange={(val) => {
+                  setSelectedClass(val ? Number(val) : '');
                   setValue('subject', 0);
                 }}
-              >
-                <option value="" disabled>Select a class…</option>
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
-              </select>
+                placeholder="Select a class…"
+              />
             </div>
             <div className="space-y-1">
               <label className="block text-sm font-medium">Subject</label>
-              <select
-                className="w-full px-4 py-3 rounded-xl border-2 border-input bg-background focus:border-primary outline-none disabled:opacity-50"
+              <CustomSelect
+                options={subjectsForClass.map((s) => ({ value: String(s.id), label: s.name }))}
                 disabled={selectedClass === ''}
-                value={watch('subject') || 0}
-                onChange={(e) => setValue('subject', Number(e.target.value))}
-              >
-                <option value={0} disabled>
-                  {selectedClass === '' ? 'Select a class first…' : 'Select a subject…'}
-                </option>
-                {subjectsForClass.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-              {errors.subject && <p className="text-sm text-destructive">{errors.subject.message}</p>}
+                value={watch('subject') ? String(watch('subject')) : ''}
+                onChange={(val) => setValue('subject', Number(val))}
+                placeholder={selectedClass === '' ? 'Select a class first…' : 'Select a subject…'}
+              />
+              {errors.subject && <p className="text-sm text-destructive mt-1">{errors.subject.message}</p>}
             </div>
           </div>
           <AnimatedInput label="Chapter name" placeholder="Algebra Basics" error={errors.name?.message} {...register('name')} />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Lessons</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="e.g. Introduction to variables"
+                value={newLesson}
+                onChange={(e) => setNewLesson(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddLesson();
+                  }
+                }}
+                className="flex-1 px-4 py-2 text-sm rounded-xl border-2 border-input bg-background focus:border-primary outline-none"
+              />
+              <Button type="button" variant="outline" onClick={handleAddLesson} className="shrink-0">
+                Add
+              </Button>
+            </div>
+            {lessons.length > 0 && (
+              <div className="max-h-36 overflow-y-auto border border-slate-100 rounded-xl divide-y divide-slate-100 bg-slate-50/50 custom-scrollbar mt-2">
+                {lessons.map((lesson, idx) => (
+                  <div key={idx} className="flex items-center justify-between px-3 py-2 text-xs font-semibold text-slate-700">
+                    <span className="truncate">{lesson}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLesson(idx)}
+                      className="text-rose-500 hover:text-rose-700 transition-colors p-1"
+                      title="Remove lesson"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-1">
             <label className="block text-sm font-medium">Description (optional)</label>
             <textarea
-              rows={3}
+              rows={2}
               className="w-full px-4 py-3 rounded-xl border-2 border-input bg-background focus:border-primary outline-none"
               {...register('description')}
             />
           </div>
+
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" className="rounded" {...register('is_active')} />
             Active

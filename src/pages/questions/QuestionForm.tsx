@@ -15,6 +15,7 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 const questionSchema = z.object({
   subject: z.coerce.number().int().positive('Select a subject'),
   chapter: z.coerce.number().int().positive('Select a chapter'),
+  lesson: z.string().optional().default(''),
   question_text: z.string().min(1, 'Question text is required'),
   option_a: z.string().min(1, 'Option A is required').max(500),
   option_b: z.string().min(1, 'Option B is required').max(500),
@@ -51,6 +52,7 @@ export default function QuestionForm({ initialData, onSubmit, isSubmitting, titl
     defaultValues: {
       subject: 0,
       chapter: 0,
+      lesson: '',
       question_text: '',
       option_a: '',
       option_b: '',
@@ -66,6 +68,7 @@ export default function QuestionForm({ initialData, onSubmit, isSubmitting, titl
   });
 
   const selectedSubject = watch('subject');
+  const selectedChapter = watch('chapter');
 
   // Class is a UI-only filter for the Subject dropdown — a question's FK is the subject,
   // which already carries its class. Same pattern as the New Chapter dialog.
@@ -86,6 +89,13 @@ export default function QuestionForm({ initialData, onSubmit, isSubmitting, titl
     queryFn: () => chaptersService.list({ subject: selectedSubject, page_size: 200 }),
     enabled: !!selectedSubject && selectedSubject > 0,
   });
+
+  const selectedChapterObj = useMemo(() => {
+    if (!selectedChapter || !chaptersQuery.data?.results) return null;
+    return chaptersQuery.data.results.find((ch) => ch.id === selectedChapter);
+  }, [selectedChapter, chaptersQuery.data]);
+
+  const chapterLessons = selectedChapterObj?.lessons || [];
 
   const allSubjects = useMemo(() => subjectsQuery.data?.results ?? [], [subjectsQuery.data]);
 
@@ -117,6 +127,7 @@ export default function QuestionForm({ initialData, onSubmit, isSubmitting, titl
       reset({
         subject: initialData.subject,
         chapter: initialData.chapter,
+        lesson: initialData.lesson || '',
         question_text: initialData.question_text,
         option_a: initialData.option_a,
         option_b: initialData.option_b,
@@ -137,6 +148,7 @@ export default function QuestionForm({ initialData, onSubmit, isSubmitting, titl
       const payload: QuestionWriteRequest = {
         subject: data.subject,
         chapter: data.chapter,
+        lesson: data.lesson ?? '',
         question_text: data.question_text,
         option_a: data.option_a,
         option_b: data.option_b,
@@ -233,10 +245,28 @@ export default function QuestionForm({ initialData, onSubmit, isSubmitting, titl
               ]}
               value={String(watch('chapter') ?? 0)}
               disabled={!selectedSubject || selectedSubject === 0}
-              onChange={(val) => setValue('chapter', Number(val))}
+              onChange={(val) => {
+                setValue('chapter', Number(val));
+                setValue('lesson', '');
+              }}
               containerClassName="w-full"
             />
             {errors.chapter && <p className="text-xs text-destructive font-medium mt-1">{errors.chapter.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="lesson" className="text-xs font-black text-slate-550 uppercase tracking-wider">Lesson (Optional)</Label>
+            <CustomSelect
+              options={[
+                { value: '', label: chapterLessons.length === 0 ? 'No lessons in this chapter' : 'Select lesson' },
+                ...chapterLessons.map((l) => ({ value: l, label: l }))
+              ]}
+              value={watch('lesson') ?? ''}
+              disabled={!watch('chapter') || watch('chapter') === 0 || chapterLessons.length === 0}
+              onChange={(val) => setValue('lesson', val)}
+              containerClassName="w-full"
+            />
+            {errors.lesson && <p className="text-xs text-destructive font-medium mt-1">{errors.lesson.message}</p>}
           </div>
         </div>
 

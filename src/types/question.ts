@@ -13,6 +13,7 @@ export interface QuestionListItem {
   school: number;
   subject: NamedRef;
   chapter: NamedRef;
+  lesson?: string;
   question_text: string;
   difficulty: Difficulty;
   marks: string;
@@ -29,6 +30,7 @@ export interface Question {
   subject_name: string;
   chapter: number;
   chapter_name: string;
+  lesson?: string;
   created_by: number | null;
   created_by_name: string | null;
   question_text: string;
@@ -55,6 +57,7 @@ export interface Question {
 export interface QuestionWriteRequest {
   subject: number;
   chapter: number;
+  lesson?: string;
   question_text: string;
   option_a: string;
   option_b: string;

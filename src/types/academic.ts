@@ -41,6 +41,7 @@ export interface Chapter {
   name: string;
   order_number: number;
   description: string;
+  lessons?: string[];
   is_active: boolean;
   created_at: string;
 }
@@ -73,5 +74,6 @@ export interface ChapterWriteRequest {
   /** Optional: the backend auto-assigns the next order number on create. */
   order_number?: number;
   description: string;
+  lessons?: string[];
   is_active: boolean;
 }

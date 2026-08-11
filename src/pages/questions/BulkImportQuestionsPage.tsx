@@ -108,6 +108,11 @@ export default function BulkImportQuestionsPage() {
                   <TableCell className="text-sm">Chapter name OR numeric ID</TableCell>
                 </TableRow>
                 <TableRow>
+                  <TableCell className="font-mono text-xs">lesson</TableCell>
+                  <TableCell><Badge variant="outline">Optional</Badge></TableCell>
+                  <TableCell className="text-sm">Lesson name (must belong to the selected chapter)</TableCell>
+                </TableRow>
+                <TableRow>
                   <TableCell className="font-mono text-xs">difficulty</TableCell>
                   <TableCell><Badge variant="default">Required</Badge></TableCell>
                   <TableCell className="text-sm">easy, medium, or hard</TableCell>

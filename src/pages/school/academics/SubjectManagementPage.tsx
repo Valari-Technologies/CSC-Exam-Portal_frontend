@@ -175,19 +175,19 @@ export default function SubjectManagementPage() {
             containerClassName="w-64"
           />
         )}
-        <CustomSelect
-          options={classOptions}
-          value={String(classFilter)}
-          onChange={(val) => setClassFilter(val ? Number(val) : '')}
-          placeholder="Filter by class..."
-          containerClassName="w-48"
-        />
         <input
           type="search"
           placeholder="Search subjects..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="py-2 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring w-56"
+        />
+        <CustomSelect
+          options={classOptions}
+          value={String(classFilter)}
+          onChange={(val) => setClassFilter(val ? Number(val) : '')}
+          placeholder="Filter by class..."
+          containerClassName="w-48"
         />
       </div>
 
@@ -209,7 +209,7 @@ export default function SubjectManagementPage() {
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Chapters</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Questions</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Status</TableHead>
-                {canManage && <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>}
+                {canManage && <TableHead className="text-center text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -227,7 +227,7 @@ export default function SubjectManagementPage() {
                     </Badge>
                   </TableCell>
                   {canManage && (
-                    <TableCell className="text-right py-3.5">
+                    <TableCell className="text-center py-3.5">
                       <Button variant="ghost" size="icon" onClick={() => setEditing(s)} aria-label="Edit">
                         <Edit className="h-4 w-4" />
                       </Button>

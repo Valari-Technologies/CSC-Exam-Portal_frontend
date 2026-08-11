@@ -206,7 +206,7 @@ export default function SectionManagementPage() {
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Section</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Students</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Status</TableHead>
-                {canManage && <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>}
+                {canManage && <TableHead className="text-center text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -222,7 +222,7 @@ export default function SectionManagementPage() {
                     </Badge>
                   </TableCell>
                   {canManage && (
-                    <TableCell className="text-right py-3.5">
+                    <TableCell className="text-center py-3.5">
                       <Button variant="ghost" size="icon" onClick={() => setEditing(s)} aria-label="Edit">
                         <Edit className="h-4 w-4" />
                       </Button>

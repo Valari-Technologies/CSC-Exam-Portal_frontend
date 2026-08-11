@@ -587,7 +587,12 @@ export default function QuestionBankPage() {
                       </TableCell>
                       <TableCell className="text-muted-foreground tabular-nums font-semibold py-3.5">{index + 1}</TableCell>
                       <TableCell className="font-bold text-slate-900 text-sm py-3.5">{q.question_text}</TableCell>
-                      <TableCell className="text-sm font-semibold text-slate-800 py-3.5">{q.chapter.name}</TableCell>
+                      <TableCell className="text-sm font-semibold text-slate-800 py-3.5">
+                        <div>{q.chapter.name}</div>
+                        {q.lesson && (
+                          <div className="text-xs text-indigo-600 font-bold mt-0.5">{q.lesson}</div>
+                        )}
+                      </TableCell>
                       <TableCell className="py-3.5">
                         <Badge variant={DIFFICULTY_VARIANT[q.difficulty]}>{q.difficulty}</Badge>
                       </TableCell>
