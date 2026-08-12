@@ -52,21 +52,36 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
-  body {
-    @apply bg-background text-foreground;
+  html, body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
+    scrollbar-gutter: stable;
   }
 
   /* Native select dropdown styles to match the indigo theme */
   select {
-    @apply transition-all duration-150 border border-slate-200 rounded-xl py-2 px-3 text-sm bg-background text-slate-800 outline-none cursor-pointer;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    background-color: hsl(var(--background));
+    color: #1e293b;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    cursor: pointer;
   }
   select:hover {
-    @apply border-slate-300 bg-slate-50/50;
+    border-color: #cbd5e1;
+    background-color: rgba(248, 250, 252, 0.5);
   }
   select:focus {
-    @apply border-indigo-500 ring-4 ring-indigo-100 bg-white scale-[1.005];
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px #e0e7ff;
+    background-color: #ffffff;
+    transform: scale(1.005);
   }
 }

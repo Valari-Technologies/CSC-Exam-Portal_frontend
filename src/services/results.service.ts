@@ -22,6 +22,7 @@ export interface ResultListParams {
   search?: string;
   search_type?: string;
   ordering?: string;
+  class_scope?: string;
 }
 
 export type ExportFormat = 'csv' | 'excel' | 'pdf';

@@ -18,8 +18,10 @@ import {
 } from '@/components/ui/Table';
 import { classesService, sectionsService, subjectsService, chaptersService } from '@/services/academics.service';
 import { examsService } from '@/services/exams.service';
+import { teachersService } from '@/services/teachers.service';
 import { classLabel } from '@/lib/utils';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { useAuth } from '@/hooks/useAuth';
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return '--';
@@ -29,6 +31,9 @@ function formatDateTime(iso: string | null): string {
 }
 
 export default function CompletedExamsPage() {
+  const { user } = useAuth();
+  const isTeacher = user?.role === 'teacher';
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState('student_name');
@@ -39,6 +44,7 @@ export default function CompletedExamsPage() {
   const [subjectFilter, setSubjectFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [classScope, setClassScope] = useState('assigned');
 
   const classesQuery = useQuery({
     queryKey: ['classes-dropdown'],
@@ -70,7 +76,7 @@ export default function CompletedExamsPage() {
   );
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['exam-sessions', { page, search, searchType, classFilter, sectionFilter, subjectFilter, dateFrom, dateTo }],
+    queryKey: ['exam-sessions', { page, search, searchType, classFilter, sectionFilter, subjectFilter, dateFrom, dateTo, classScope }],
     queryFn: () =>
       examsService.listSessions({
         page,
@@ -85,6 +91,7 @@ export default function CompletedExamsPage() {
         ...(subjectFilter ? { subject: Number(subjectFilter) } : {}),
         ...(dateFrom ? { date_from: dateFrom } : {}),
         ...(dateTo ? { date_to: dateTo } : {}),
+        ...(isTeacher ? { class_scope: classScope } : {}),
         ordering: '-submitted_at',
       }),
     placeholderData: keepPreviousData,
@@ -95,19 +102,72 @@ export default function CompletedExamsPage() {
 
   const resetPage = () => setPage(1);
 
+  const assignmentsQuery = useQuery({
+    queryKey: ['teacher-my-assignments'],
+    queryFn: () => teachersService.listAssignments({ page_size: 100 }),
+    enabled: isTeacher,
+  });
+
+  const assignedClasses = isTeacher
+    ? Array.from(
+        new Map(
+          (assignmentsQuery.data?.results || []).map((a) => [
+            a.school_class,
+            { id: a.school_class, name: a.class_name }
+          ])
+        ).values()
+      )
+    : null;
+
+  const teacherHasWholeClass = isTeacher
+    ? (assignmentsQuery.data?.results || []).some((a) => a.school_class === Number(classFilter) && a.section === null)
+    : false;
+
+  const teacherSectionIds = isTeacher
+    ? new Set(
+        (assignmentsQuery.data?.results || [])
+          .filter((a) => a.school_class === Number(classFilter) && a.section !== null)
+          .map((a) => a.section)
+      )
+    : null;
+
+  const filteredSections = sectionsQuery.data?.results.filter((s) => {
+    if (!isTeacher || teacherHasWholeClass) return true;
+    return teacherSectionIds?.has(s.id);
+  }) || [];
+
+  const assignedSubjects = isTeacher
+    ? Array.from(
+        new Map(
+          (assignmentsQuery.data?.results || [])
+            .filter((a) => a.subject !== null && (!classFilter || a.school_class === Number(classFilter)))
+            .map((a) => [
+              a.subject,
+              { id: a.subject, name: a.subject_name }
+            ])
+        ).values()
+      )
+    : null;
+
   const classOptions = [
     { value: '', label: 'All' },
-    ...(classesQuery.data?.results.map((c) => ({ value: String(c.id), label: classLabel(c) })) || [])
+    ...(isTeacher && classScope === 'assigned'
+      ? (assignedClasses?.map((c) => ({ value: String(c.id), label: c.name || '' })) || [])
+      : (classesQuery.data?.results.map((c) => ({ value: String(c.id), label: classLabel(c) })) || []))
   ];
 
   const sectionOptions = [
     { value: '', label: 'All' },
-    ...(sectionsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || [])
+    ...(isTeacher && classScope === 'assigned'
+      ? (filteredSections.map((s) => ({ value: String(s.id), label: s.name || '' })) || [])
+      : (sectionsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || []))
   ];
 
   const subjectOptions = [
     { value: '', label: 'All' },
-    ...(subjectsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || [])
+    ...(isTeacher && classScope === 'assigned'
+      ? (assignedSubjects?.map((s) => ({ value: String(s.id), label: s.name || '' })) || [])
+      : (subjectsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || []))
   ];
 
   return (
@@ -134,8 +194,9 @@ export default function CompletedExamsPage() {
       </div>
 
       {/* filters */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-xs grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
-        <div className="space-y-1 col-span-2">
+      <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        {/* Row 1, Col 1-2: Search bar */}
+        <div className="space-y-1 col-span-1 sm:col-span-2">
           <Label htmlFor="search" className="text-xs font-black text-slate-550 uppercase tracking-wider">
             Search By {searchType === 'student_name' ? 'Student Name' : searchType === 'chapter_name' ? 'Chapter Name' : 'Student ID'}
           </Label>
@@ -261,6 +322,41 @@ export default function CompletedExamsPage() {
             </div>
           </div>
         </div>
+
+        {/* Row 1, Col 3: From Date */}
+        <div className="space-y-1">
+          <Label htmlFor="date_from" className="text-xs font-black text-slate-550 uppercase tracking-wider">From</Label>
+          <Input id="date_from" type="date" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); resetPage(); }} />
+        </div>
+
+        {/* Row 1, Col 4: To Date */}
+        <div className="space-y-1">
+          <Label htmlFor="date_to" className="text-xs font-black text-slate-550 uppercase tracking-wider">To</Label>
+          <Input id="date_to" type="date" align="right" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateTo} onChange={(e) => { setDateTo(e.target.value); resetPage(); }} />
+        </div>
+
+        {/* Row 2, Col 1: Class View (only if teacher) */}
+        {isTeacher && (
+          <div className="space-y-1">
+            <Label className="text-xs font-black text-slate-550 uppercase tracking-wider">Class View</Label>
+            <CustomSelect
+              options={[
+                { value: 'assigned', label: 'Assigned Class' },
+                { value: 'entire', label: 'Entire Class' }
+              ]}
+              value={classScope}
+              onChange={(val) => {
+                setClassScope(val);
+                setClassFilter('');
+                setSectionFilter('');
+                resetPage();
+              }}
+              className="h-10"
+            />
+          </div>
+        )}
+
+        {/* Row 2, Col 2: Class */}
         <div className="space-y-1">
           <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Class</Label>
           <CustomSelect
@@ -271,6 +367,8 @@ export default function CompletedExamsPage() {
             className="h-10"
           />
         </div>
+
+        {/* Row 2, Col 3: Section */}
         <div className="space-y-1">
           <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Section</Label>
           <CustomSelect
@@ -282,6 +380,8 @@ export default function CompletedExamsPage() {
             className="h-10"
           />
         </div>
+
+        {/* Row 2, Col 4: Subject */}
         <div className="space-y-1">
           <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Subject</Label>
           <CustomSelect
@@ -292,15 +392,9 @@ export default function CompletedExamsPage() {
             className="h-10"
           />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="date_from" className="text-xs font-black text-slate-550 uppercase tracking-wider">From</Label>
-          <Input id="date_from" type="date" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); resetPage(); }} />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="date_to" className="text-xs font-black text-slate-550 uppercase tracking-wider">To</Label>
-          <Input id="date_to" type="date" align="right" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateTo} onChange={(e) => { setDateTo(e.target.value); resetPage(); }} />
-        </div>
       </div>
+
+
 
       {/* table */}
       <div className="border border-slate-200/60 rounded-2xl overflow-hidden shadow-xs bg-white">

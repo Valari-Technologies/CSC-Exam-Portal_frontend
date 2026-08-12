@@ -6,7 +6,9 @@ interface DatePickerProps {
   id?: string;
   name?: string;
   value?: string | number | readonly string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange?: (event: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onBlur?: (event: any) => void;
   className?: string;
   placeholder?: string;
@@ -79,7 +81,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
     useEffect(() => {
       const handleClickOutside = (e: MouseEvent) => {
         if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-          handleCancel();
+          setIsOpen(false);
         }
       };
       if (isOpen) {
@@ -88,44 +90,19 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
-    }, [isOpen, committedValue]);
+    }, [isOpen]);
 
-    const handleApply = () => {
-      if (selectedDate) {
-        const dbValue = formatDateForDB(selectedDate);
-        setCommittedValue(dbValue);
-        if (onChange) {
-          onChange({
-            target: {
-              name,
-              value: dbValue,
-            },
-          });
-        }
-      } else {
-        setCommittedValue('');
-        if (onChange) {
-          onChange({
-            target: {
-              name,
-              value: '',
-            },
-          });
-        }
-      }
-      setIsOpen(false);
-    };
-
-    const handleCancel = () => {
-      // Revert selectedDate to initial value
-      if (committedValue) {
-        const parsed = parseDateString(committedValue);
-        if (parsed) {
-          setSelectedDate(parsed);
-          setCurrentMonth(parsed);
-        }
-      } else {
-        setSelectedDate(null);
+    const handleSelectDate = (date: Date) => {
+      setSelectedDate(date);
+      const dbValue = formatDateForDB(date);
+      setCommittedValue(dbValue);
+      if (onChange) {
+        onChange({
+          target: {
+            name,
+            value: dbValue,
+          },
+        });
       }
       setIsOpen(false);
     };
@@ -294,9 +271,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => {
-                      setSelectedDate(dayObj.date);
-                    }}
+                    onClick={() => handleSelectDate(dayObj.date)}
                     className={cn(
                       'h-8 w-8 flex items-center justify-center text-xs rounded-lg transition-colors font-medium',
                       dayObj.isCurrentMonth ? 'text-slate-800' : 'text-slate-300',
@@ -311,24 +286,6 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                   </button>
                 );
               })}
-            </div>
-
-            {/* Footer Buttons */}
-            <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="flex-1 py-2 text-xs font-bold border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleApply}
-                className="flex-1 py-2 text-xs font-bold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors"
-              >
-                Apply
-              </button>
             </div>
           </div>
         )}

@@ -58,6 +58,7 @@ export default function QuestionBankPage() {
   const [subjectFilter, setSubjectFilter] = useState<number | ''>('');
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | ''>('');
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive'>('active');
+  const [lessonFilter, setLessonFilter] = useState<string>('');
   const [pendingDelete, setPendingDelete] = useState<QuestionListItem | null>(null);
   const [notice, setNotice] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -166,17 +167,39 @@ export default function QuestionBankPage() {
     setSectionFilter('');
     setSubjectFilter('');
     setChapterFilter('');
+    setLessonFilter('');
   };
 
   const onSubjectFilterChange = (value: number | '') => {
     setSubjectFilter(value);
     setChapterFilter('');
+    setLessonFilter('');
+  };
+
+  const onChapterFilterChange = (value: number | '') => {
+    setChapterFilter(value);
+    setLessonFilter('');
   };
 
   const chaptersQuery = useQuery({
     queryKey: ['chapters-dropdown', subjectFilter],
     queryFn: () => chaptersService.list({ subject: subjectFilter || undefined, page_size: 200 }),
   });
+
+  const selectedChapterObj = useMemo(() => {
+    if (!chapterFilter) return null;
+    return (chaptersQuery.data?.results ?? []).find((ch) => ch.id === Number(chapterFilter));
+  }, [chapterFilter, chaptersQuery.data]);
+
+  const lessonOptions = useMemo(() => {
+    const list = [{ value: '', label: 'All lessons' }];
+    if (selectedChapterObj?.lessons) {
+      for (const l of selectedChapterObj.lessons) {
+        list.push({ value: l, label: l });
+      }
+    }
+    return list;
+  }, [selectedChapterObj]);
 
   const questionsQuery = useQuery({
     queryKey: [
@@ -185,6 +208,7 @@ export default function QuestionBankPage() {
         search,
         subject: subjectFilter || undefined,
         chapter: chapterFilter || undefined,
+        lesson: lessonFilter || undefined,
         difficulty: difficultyFilter || undefined,
         status: statusFilter,
       },
@@ -195,6 +219,7 @@ export default function QuestionBankPage() {
         search: search || undefined,
         subject: subjectFilter || undefined,
         chapter: chapterFilter || undefined,
+        lesson: lessonFilter || undefined,
         difficulty: difficultyFilter || undefined,
         is_active: statusFilter === 'active',
       }),
@@ -373,12 +398,10 @@ export default function QuestionBankPage() {
     { value: 'medium', label: 'Medium' },
     { value: 'hard', label: 'Hard' }
   ];
-
   const statusOptions = [
     { value: 'active', label: 'Active' },
     { value: 'inactive', label: 'Archived / Inactive' }
   ];
-
   return (
     <div className="space-y-6">
       {/* Top Header Card with question bank header.webp background */}
@@ -413,64 +436,120 @@ export default function QuestionBankPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-xs flex items-center gap-3 flex-wrap">
-        <form onSubmit={onSearchSubmit} className="relative w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search question text..."
-            className="pl-9 pr-4 py-2 rounded-md border border-input bg-background text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+      <div className="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-xs flex flex-col gap-4">
+        {/* Row 1 */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <form onSubmit={onSearchSubmit} className="relative w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search question text..."
+              className="pl-9 pr-4 py-2 rounded-md border border-input bg-background text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </form>
+          {isTeacher && (
+            <>
+              <CustomSelect
+                options={classOptions}
+                value={String(classFilter)}
+                onChange={(val) => onClassFilterChange(val ? Number(val) : '')}
+                placeholder="All my classes"
+                containerClassName="w-44"
+              />
+              <CustomSelect
+                options={sectionOptions}
+                value={String(sectionFilter)}
+                onChange={(val) => setSectionFilter(val ? Number(val) : '')}
+                disabled={classFilter === '' || assignedSections.length === 0}
+                placeholder="All sections"
+                containerClassName="w-44"
+              />
+            </>
+          )}
+          <CustomSelect
+            options={subjectOptions}
+            value={String(subjectFilter)}
+            onChange={(val) => onSubjectFilterChange(val ? Number(val) : '')}
+            placeholder={isTeacher ? 'Assigned subjects' : 'All subjects'}
+            containerClassName="w-56"
           />
-        </form>
-        {isTeacher && (
-          <>
+          {isTeacher ? (
             <CustomSelect
-              options={classOptions}
-              value={String(classFilter)}
-              onChange={(val) => onClassFilterChange(val ? Number(val) : '')}
-              placeholder="All my classes"
-              containerClassName="w-44"
+              options={difficultyOptions}
+              value={difficultyFilter}
+              onChange={(val) => setDifficultyFilter((val as Difficulty) || '')}
+              placeholder="All difficulties"
+              containerClassName="w-48"
             />
-            <CustomSelect
-              options={sectionOptions}
-              value={String(sectionFilter)}
-              onChange={(val) => setSectionFilter(val ? Number(val) : '')}
-              disabled={classFilter === '' || assignedSections.length === 0}
-              placeholder="All sections"
-              containerClassName="w-44"
-            />
-          </>
-        )}
-        <CustomSelect
-          options={subjectOptions}
-          value={String(subjectFilter)}
-          onChange={(val) => onSubjectFilterChange(val ? Number(val) : '')}
-          placeholder={isTeacher ? 'Assigned subjects' : 'All subjects'}
-          containerClassName="w-56"
-        />
-        <CustomSelect
-          options={chapterOptions}
-          value={String(chapterFilter)}
-          onChange={(val) => setChapterFilter(val ? Number(val) : '')}
-          placeholder="All chapters"
-          containerClassName="w-52"
-        />
-        <CustomSelect
-          options={difficultyOptions}
-          value={difficultyFilter}
-          onChange={(val) => setDifficultyFilter((val as Difficulty) || '')}
-          placeholder="All difficulties"
-          containerClassName="w-48"
-        />
-        <CustomSelect
-          options={statusOptions}
-          value={statusFilter}
-          onChange={(val) => setStatusFilter(val as 'active' | 'inactive')}
-          placeholder="Active"
-          containerClassName="w-48"
-        />
+          ) : (
+            <>
+              <CustomSelect
+                options={chapterOptions}
+                value={String(chapterFilter)}
+                onChange={(val) => onChapterFilterChange(val ? Number(val) : '')}
+                placeholder="All chapters"
+                containerClassName="w-52"
+              />
+              <CustomSelect
+                options={lessonOptions}
+                value={lessonFilter}
+                onChange={(val) => setLessonFilter(val)}
+                placeholder="All lessons"
+                containerClassName="w-52"
+                disabled={chapterFilter === ''}
+              />
+            </>
+          )}
+        </div>
+
+        {/* Row 2 */}
+        <div className="flex items-center gap-3 flex-wrap border-t border-slate-100/60 pt-3">
+          {isTeacher ? (
+            <>
+              <CustomSelect
+                options={chapterOptions}
+                value={String(chapterFilter)}
+                onChange={(val) => onChapterFilterChange(val ? Number(val) : '')}
+                placeholder="All chapters"
+                containerClassName="w-52"
+              />
+              <CustomSelect
+                options={lessonOptions}
+                value={lessonFilter}
+                onChange={(val) => setLessonFilter(val)}
+                placeholder="All lessons"
+                containerClassName="w-52"
+                disabled={chapterFilter === ''}
+              />
+              <CustomSelect
+                options={statusOptions}
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(val as 'active' | 'inactive')}
+                placeholder="Active"
+                containerClassName="w-48"
+              />
+            </>
+          ) : (
+            <>
+              <CustomSelect
+                options={difficultyOptions}
+                value={difficultyFilter}
+                onChange={(val) => setDifficultyFilter((val as Difficulty) || '')}
+                placeholder="All difficulties"
+                containerClassName="w-48"
+              />
+              <CustomSelect
+                options={statusOptions}
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(val as 'active' | 'inactive')}
+                placeholder="Active"
+                containerClassName="w-48"
+              />
+            </>
+          )}
+        </div>
       </div>
 
       {/* Bulk selection toolbar */}
@@ -517,8 +596,7 @@ export default function QuestionBankPage() {
           <div className="py-12 text-center text-sm text-destructive">Failed to load questions.</div>
         ) : groups.length === 0 ? (
           <div className="py-12 text-center text-sm text-muted-foreground">
-            No questions found.{' '}
-            {search || classFilter || sectionFilter || subjectFilter || difficultyFilter || statusFilter === 'inactive'
+            {search || classFilter || sectionFilter || subjectFilter || difficultyFilter || lessonFilter || chapterFilter || statusFilter === 'inactive'
               ? 'Try clearing filters.'
               : 'Add your first question.'}
           </div>
@@ -539,9 +617,9 @@ export default function QuestionBankPage() {
                 <TableHead className="w-16 text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">S.No</TableHead>
                 <TableHead className="w-[42%] text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Question</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Chapter</TableHead>
+                <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Lesson</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Difficulty</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Marks</TableHead>
-                <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Status</TableHead>
                 <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -588,20 +666,15 @@ export default function QuestionBankPage() {
                       <TableCell className="text-muted-foreground tabular-nums font-semibold py-3.5">{index + 1}</TableCell>
                       <TableCell className="font-bold text-slate-900 text-sm py-3.5">{q.question_text}</TableCell>
                       <TableCell className="text-sm font-semibold text-slate-800 py-3.5">
-                        <div>{q.chapter.name}</div>
-                        {q.lesson && (
-                          <div className="text-xs text-indigo-600 font-bold mt-0.5">{q.lesson}</div>
-                        )}
+                        {q.chapter.name}
+                      </TableCell>
+                      <TableCell className="text-sm font-semibold text-slate-800 py-3.5">
+                        {q.lesson || <span className="text-slate-400 font-normal italic">No lesson</span>}
                       </TableCell>
                       <TableCell className="py-3.5">
                         <Badge variant={DIFFICULTY_VARIANT[q.difficulty]}>{q.difficulty}</Badge>
                       </TableCell>
                       <TableCell className="font-bold text-indigo-600 py-3.5">{q.marks}</TableCell>
-                      <TableCell className="py-3.5">
-                        <Badge variant={q.is_active ? 'success' : 'secondary'}>
-                          {q.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="text-right py-3.5">
                         <div className="inline-flex items-center gap-1">
                           <Button

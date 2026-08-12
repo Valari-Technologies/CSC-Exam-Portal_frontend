@@ -537,6 +537,22 @@ export default function AvailableExamsPage() {
                             Class: {a.class_name} {a.section_name ? `(${a.section_name})` : ''}
                           </div>
                         )}
+                        <div className="flex items-center gap-2 font-medium text-slate-700">
+                          <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                          Subject: <span className="font-semibold text-slate-950">{a.subject_name || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 font-medium text-slate-700">
+                          <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                          Chapter: <span className="font-semibold text-slate-950">{a.chapter_name || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 font-medium text-slate-700">
+                          <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                          Lesson: <span className="font-semibold text-slate-950">{a.lesson_name || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 font-medium text-slate-700">
+                          <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+                          Assign by: <span className="font-semibold text-slate-950">{a.assigned_by_name || 'N/A'}</span>
+                        </div>
                         <div className="flex items-center gap-2 text-slate-500 pt-1">
                           <Calendar className="h-4 w-4 text-purple-500 shrink-0" />
                           <span>{formatDateTime(a.start_datetime)}</span>

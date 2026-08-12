@@ -80,34 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  // Inactivity auto-logout after 1 hour of no user interaction
-  useEffect(() => {
-    if (!user) return;
-
-    let timeoutId: number;
-
-    const resetTimer = () => {
-      window.clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(() => {
-        logout();
-      }, 60 * 60 * 1000); // 1 hour
-    };
-
-    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
-    events.forEach((event) => {
-      window.addEventListener(event, resetTimer);
-    });
-
-    resetTimer();
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      events.forEach((event) => {
-        window.removeEventListener(event, resetTimer);
-      });
-    };
-  }, [user, logout]);
-
   const refreshUser = useCallback(async () => {
     await loadUser();
   }, [loadUser]);

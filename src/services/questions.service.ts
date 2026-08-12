@@ -31,6 +31,7 @@ export interface QuestionListParams {
   school?: number;
   subject?: number;
   chapter?: number;
+  lesson?: string;
   difficulty?: string;
   is_active?: boolean;
   page_size?: number;

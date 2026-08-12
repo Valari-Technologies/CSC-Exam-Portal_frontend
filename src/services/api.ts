@@ -25,7 +25,7 @@ async function refreshAccessToken(): Promise<string> {
   const refresh = sessionStorage.getItem(REFRESH_TOKEN_KEY);
   if (!refresh) throw new Error('No refresh token');
   const response = await axios.post<{ access: string; refresh?: string }>(
-    `${API_BASE}/auth/refresh/`,
+    `${API_BASE}auth/refresh/`,
     { refresh },
   );
   sessionStorage.setItem(ACCESS_TOKEN_KEY, response.data.access);

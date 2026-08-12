@@ -91,10 +91,10 @@ export const CustomSelect = forwardRef<HTMLButtonElement, CustomSelectProps>(
         {searchable ? (
           <div className="relative w-full">
             <input
-              ref={ref as any}
+              ref={ref as unknown as React.Ref<HTMLInputElement>}
               type="text"
               disabled={disabled}
-              placeholder={placeholder}
+              placeholder={open ? searchPlaceholder : placeholder}
               value={open ? searchTerm : (currentOption ? currentOption.label : '')}
               onFocus={() => {
                 if (!disabled) {
@@ -123,6 +123,7 @@ export const CustomSelect = forwardRef<HTMLButtonElement, CustomSelectProps>(
                   : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100",
                 className
               )}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               {...(props as any)}
             />
             <button

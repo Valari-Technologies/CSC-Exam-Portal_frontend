@@ -117,6 +117,10 @@ export interface TestAssignmentListItem {
   class_name: string | null;
   section: number | null;
   section_name: string | null;
+  subject_name: string | null;
+  assigned_by_name: string | null;
+  chapter_name: string | null;
+  lesson_name: string | null;
   start_datetime: string;
   end_datetime: string;
   /**

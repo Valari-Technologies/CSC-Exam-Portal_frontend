@@ -56,6 +56,7 @@ export default function ExamScreenPage() {
   const [cheatWarnings, setCheatWarnings] = useState(0);
   const [showCheatWarning, setShowCheatWarning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isWindowBlurred, setIsWindowBlurred] = useState(false);
 
   // Refs for cleanup
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -227,6 +228,61 @@ export default function ExamScreenPage() {
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [sId, session, navigate]);
 
+  // Anti-cheat: Disable right click, copy, cut, select, print, printscreen, developer tools, and handle blur
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+
+    const handleCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+    };
+
+    const handleCut = (e: ClipboardEvent) => {
+      e.preventDefault();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMetaOrCtrl = e.ctrlKey || e.metaKey;
+      if (
+        (isMetaOrCtrl && ['c', 'x', 'u', 'p'].includes(e.key.toLowerCase())) ||
+        (isMetaOrCtrl && e.shiftKey && e.key.toLowerCase() === 'i') ||
+        e.key === 'F12' ||
+        e.key === 'PrintScreen' ||
+        e.key === 'Snapshot'
+      ) {
+        e.preventDefault();
+        if (e.key === 'PrintScreen' || e.key === 'Snapshot') {
+          navigator.clipboard?.writeText("Screenshots are disabled for this exam.").catch(() => {});
+        }
+      }
+    };
+
+    const handleBlur = () => {
+      setIsWindowBlurred(true);
+    };
+
+    const handleFocus = () => {
+      setIsWindowBlurred(false);
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('copy', handleCopy);
+    document.addEventListener('cut', handleCut);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('copy', handleCopy);
+      document.removeEventListener('cut', handleCut);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   // -----------------------------------------------------------------------
   // Submit
   // -----------------------------------------------------------------------
@@ -330,7 +386,7 @@ export default function ExamScreenPage() {
   const isTimeLow = timeRemaining !== null && timeRemaining < 300; // < 5 min
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-screen flex-col bg-background select-none relative">
       {/* Top bar */}
       <header className="flex items-center justify-between border-b bg-card px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3">
@@ -362,9 +418,9 @@ export default function ExamScreenPage() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Question navigation sidebar */}
-        <aside className="w-56 shrink-0 border-r bg-muted/30 overflow-y-auto p-3 hidden md:block">
-          <p className="text-xs font-medium text-muted-foreground mb-2">Questions</p>
-          <div className="grid grid-cols-5 gap-1.5">
+        <aside className="w-64 shrink-0 border-r bg-muted/30 overflow-y-auto p-4 hidden md:block">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Questions</p>
+          <div className="grid grid-cols-5 gap-2">
             {questions.map((q, idx) => {
               const isAnswered = answers.get(q.id) !== null && answers.get(q.id) !== undefined;
               const isCurrent = idx === currentIdx;
@@ -373,12 +429,12 @@ export default function ExamScreenPage() {
                   key={q.id}
                   onClick={() => goToQuestion(idx)}
                   className={`
-                    flex h-9 w-9 items-center justify-center rounded-md text-xs font-medium transition-colors
-                    ${isCurrent ? 'ring-2 ring-primary ring-offset-1' : ''}
+                    flex h-10 w-10 items-center justify-center rounded-md text-sm font-bold transition-colors
+                    ${isCurrent ? 'ring-2 ring-indigo-600 ring-offset-2' : ''}
                     ${
                       isAnswered
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-card border border-border text-foreground hover:bg-accent'
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        : 'bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100'
                     }
                   `}
                   aria-label={`Question ${idx + 1}`}
@@ -388,13 +444,13 @@ export default function ExamScreenPage() {
               );
             })}
           </div>
-          <div className="mt-4 space-y-1 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 rounded-sm bg-primary" />
+          <div className="mt-4 space-y-1.5 text-xs font-bold">
+            <div className="flex items-center gap-2 text-emerald-700">
+              <span className="inline-block h-3.5 w-3.5 rounded-sm bg-emerald-600" />
               Answered
             </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 rounded-sm border border-border bg-card" />
+            <div className="flex items-center gap-2 text-rose-700">
+              <span className="inline-block h-3.5 w-3.5 rounded-sm bg-rose-50 border border-rose-200" />
               Not answered
             </div>
           </div>
@@ -410,7 +466,7 @@ export default function ExamScreenPage() {
         {/* Main question area */}
         <main className="flex-1 overflow-y-auto p-6">
           {currentQuestion ? (
-            <div className="mx-auto max-w-2xl space-y-6">
+            <div className="w-full space-y-6">
               {/* Question header */}
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-lg font-medium">
@@ -607,6 +663,17 @@ export default function ExamScreenPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Blur Overlay for Anti-Screenshot & Focus Protection */}
+      {isWindowBlurred && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-md z-[9999] flex items-center justify-center select-none">
+          <div className="text-center p-6 bg-card border rounded-2xl shadow-xl max-w-sm">
+            <p className="text-base font-bold text-destructive">Exam Window Out of Focus</p>
+            <p className="text-xs text-muted-foreground mt-2 font-medium">
+              Please click back inside this window to resume your exam. Screenshots or screen sharing is prohibited.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

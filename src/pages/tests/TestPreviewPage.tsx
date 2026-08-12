@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tansta
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
   Dialog,
   DialogContent,
@@ -74,6 +75,7 @@ export default function TestPreviewPage() {
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<number[]>([]);
   const [questionSearch, setQuestionSearch] = useState('');
   const [selectedChapterIdFilter, setSelectedChapterIdFilter] = useState<number | 'all'>('all');
+  const [selectedLessonFilter, setSelectedLessonFilter] = useState<string>('all');
   // Which chapter groups are COLLAPSED — tracking the closed ones keeps every
   // group open by default, including any that appears after a search changes.
   const [collapsedChapters, setCollapsedChapters] = useState<Set<number>>(new Set());
@@ -192,16 +194,53 @@ export default function TestPreviewPage() {
     return Array.from(map.values()).sort((a, b) => a.chapterName.localeCompare(b.chapterName));
   }, [questionsQuery.data]);
 
-  const filteredChapterGroups = useMemo(() => {
-    if (selectedChapterIdFilter === 'all') {
-      return chapterGroups;
-    }
-    return chapterGroups.filter((g) => g.chapterId === selectedChapterIdFilter);
-  }, [chapterGroups, selectedChapterIdFilter]);
+  const onChapterFilterChange = (val: 'all' | number) => {
+    setSelectedChapterIdFilter(val);
+    setSelectedLessonFilter('all');
+  };
 
+  const lessonSelectOptions = useMemo(() => {
+    const list = [{ value: 'all', label: 'All Lessons' }];
+    if (selectedChapterIdFilter === 'all') return list;
+
+    const activeGroup = chapterGroups.find((g) => g.chapterId === selectedChapterIdFilter);
+    if (activeGroup) {
+      const uniqueLessons = new Set<string>();
+      for (const q of activeGroup.items) {
+        if (q.lesson) {
+          uniqueLessons.add(q.lesson);
+        }
+      }
+      for (const lesson of Array.from(uniqueLessons).sort()) {
+        list.push({ value: lesson, label: lesson });
+      }
+    }
+    return list;
+  }, [selectedChapterIdFilter, chapterGroups]);
   const chaptersList = useMemo(() => {
     return chapterGroups.map((g) => ({ id: g.chapterId, name: g.chapterName }));
   }, [chapterGroups]);
+
+  const chapterSelectOptions = useMemo(() => {
+    return [
+      { value: 'all', label: 'All Chapters' },
+      ...chaptersList.map((ch) => ({ value: String(ch.id), label: ch.name })),
+    ];
+  }, [chaptersList]);
+
+  const filteredChapterGroups = useMemo(() => {
+    let groups = chapterGroups;
+    if (selectedChapterIdFilter !== 'all') {
+      groups = groups.filter((g) => g.chapterId === selectedChapterIdFilter);
+    }
+    if (selectedLessonFilter !== 'all') {
+      groups = groups.map((g) => ({
+        ...g,
+        items: g.items.filter((q) => q.lesson === selectedLessonFilter),
+      })).filter((g) => g.items.length > 0);
+    }
+    return groups;
+  }, [chapterGroups, selectedChapterIdFilter, selectedLessonFilter]);
 
   if (isLoading) return <Spinner label="Loading test..." />;
   if (isError || !test) return <p className="text-sm text-destructive">Test not found.</p>;
@@ -564,6 +603,7 @@ export default function TestPreviewPage() {
           setQuestionSearch('');
           setCollapsedChapters(new Set());
           setSelectedChapterIdFilter('all');
+          setSelectedLessonFilter('all');
         }
       }}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -574,32 +614,36 @@ export default function TestPreviewPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row gap-3 mb-4 items-center">
+            <div className="w-full sm:w-56">
               <input
                 type="search"
                 value={questionSearch}
                 onChange={(e) => setQuestionSearch(e.target.value)}
                 placeholder="Search questions..."
-                className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-xl border-2 border-slate-200 bg-background text-sm font-medium transition-all duration-150 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
               />
             </div>
-            <div className="w-full sm:w-64">
-              <select
-                value={selectedChapterIdFilter}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedChapterIdFilter(val === 'all' ? 'all' : Number(val));
+            <div className="w-full sm:w-56">
+              <CustomSelect
+                options={chapterSelectOptions}
+                value={String(selectedChapterIdFilter)}
+                onChange={(val) => {
+                  onChapterFilterChange(val === 'all' ? 'all' : Number(val));
                 }}
-                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <option value="all">All Chapters</option>
-                {chaptersList.map((ch) => (
-                  <option key={ch.id} value={ch.id}>
-                    {ch.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="All Chapters"
+              />
+            </div>
+            <div className="w-full sm:w-56">
+              <CustomSelect
+                options={lessonSelectOptions}
+                value={selectedLessonFilter}
+                onChange={(val) => {
+                  setSelectedLessonFilter(val);
+                }}
+                placeholder="All Lessons"
+                disabled={selectedChapterIdFilter === 'all'}
+              />
             </div>
           </div>
 
@@ -652,6 +696,25 @@ export default function TestPreviewPage() {
                     const someSelectableInGroupSelected =
                       selectableInGroup.some((qid) => selectedQuestionIds.includes(qid)) &&
                       !allSelectableInGroupSelected;
+
+                    // Group questions in this chapter by lesson
+                    const lessonGroups = (() => {
+                      const map = new Map<string, typeof group.items>();
+                      for (const q of group.items) {
+                        const lessonName = q.lesson || 'No Lesson';
+                        const existing = map.get(lessonName) ?? [];
+                        existing.push(q);
+                        map.set(lessonName, existing);
+                      }
+                      return Array.from(map.entries()).map(([lessonName, items]) => ({
+                        lessonName,
+                        items,
+                      })).sort((a, b) => {
+                        if (a.lessonName === 'No Lesson') return 1;
+                        if (b.lessonName === 'No Lesson') return -1;
+                        return a.lessonName.localeCompare(b.lessonName);
+                      });
+                    })();
 
                     return (
                       <Fragment key={group.chapterId}>
@@ -706,31 +769,65 @@ export default function TestPreviewPage() {
                             </button>
                           </TableCell>
                         </TableRow>
-                        {!isCollapsed && group.items.map((q) => {
-                          const alreadyAdded = existingQuestionIds.has(q.id);
-                          const isSelected = selectedQuestionIds.includes(q.id);
+                        {!isCollapsed && lessonGroups.map((lg) => {
+                          const total = lg.items.length;
+                          const selected = lg.items.filter(
+                            (q) => selectedQuestionIds.includes(q.id) || existingQuestionIds.has(q.id)
+                          ).length;
+                          const remaining = total - selected;
+                          const allSelected = selected === total;
+
                           return (
-                            <TableRow key={q.id} className={alreadyAdded ? 'opacity-50' : ''}>
-                              <TableCell>
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected || alreadyAdded}
-                                  disabled={alreadyAdded}
-                                  onChange={() => toggleQuestion(q.id)}
-                                  className="rounded border-input"
-                                />
-                              </TableCell>
-                              <TableCell className="text-sm">{q.question_text}</TableCell>
-                              <TableCell>
-                                <Badge variant={
-                                  q.difficulty === 'easy' ? 'success' :
-                                  q.difficulty === 'hard' ? 'destructive' : 'warning'
-                                }>
-                                  {q.difficulty}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{q.marks}</TableCell>
-                            </TableRow>
+                            <Fragment key={lg.lessonName}>
+                              {/* Lesson sub-header row */}
+                              <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b border-slate-100">
+                                <TableCell colSpan={4} className="py-2 px-4">
+                                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+                                      Lesson: <strong className="text-slate-900">{lg.lessonName}</strong>
+                                    </span>
+                                    {allSelected ? (
+                                      <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
+                                        All questions selected in this lesson ({total}/{total})
+                                      </span>
+                                    ) : (
+                                      <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+                                        Selected: {selected} | Remaining: {remaining} (Total: {total})
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+
+                              {lg.items.map((q) => {
+                                const alreadyAdded = existingQuestionIds.has(q.id);
+                                const isSelected = selectedQuestionIds.includes(q.id);
+                                return (
+                                  <TableRow key={q.id} className={alreadyAdded ? 'opacity-50' : ''}>
+                                    <TableCell>
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected || alreadyAdded}
+                                        disabled={alreadyAdded}
+                                        onChange={() => toggleQuestion(q.id)}
+                                        className="rounded border-input"
+                                      />
+                                    </TableCell>
+                                    <TableCell className="text-sm">{q.question_text}</TableCell>
+                                    <TableCell>
+                                      <Badge variant={
+                                        q.difficulty === 'easy' ? 'success' :
+                                        q.difficulty === 'hard' ? 'destructive' : 'warning'
+                                      }>
+                                        {q.difficulty}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>{q.marks}</TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </Fragment>
                           );
                         })}
                       </Fragment>

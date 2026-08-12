@@ -6,7 +6,9 @@ interface DateTimePickerProps {
   id?: string;
   name?: string;
   value?: string | number | readonly string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange?: (event: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onBlur?: (event: any) => void;
   className?: string;
   placeholder?: string;
@@ -96,11 +98,20 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
           setSelectedPeriod(period);
         }
       } else {
-        setSelectedDate(null);
-        setCurrentMonth(new Date());
-        setSelectedHours('12');
-        setSelectedMinutes('00');
-        setSelectedPeriod('AM');
+        const now = new Date();
+        setSelectedDate(now);
+        setCurrentMonth(now);
+        
+        const rawHours = now.getHours();
+        const periodVal = rawHours >= 12 ? 'PM' : 'AM';
+        let hoursVal = rawHours % 12;
+        if (hoursVal === 0) hoursVal = 12;
+        const hoursStr = String(hoursVal).padStart(2, '0');
+        const minutesStr = String(now.getMinutes()).padStart(2, '0');
+
+        setSelectedHours(hoursStr);
+        setSelectedMinutes(minutesStr);
+        setSelectedPeriod(periodVal);
       }
     }, [stringValue]);
 
@@ -108,7 +119,7 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
     useEffect(() => {
       const handleClickOutside = (e: MouseEvent) => {
         if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-          handleCancel();
+          setIsOpen(false);
         }
       };
       if (isOpen) {
@@ -117,11 +128,11 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
-    }, [isOpen, committedValue]);
+    }, [isOpen]);
 
-    const handleApply = () => {
-      const activeDate = selectedDate || new Date();
-      const dbValue = formatDateTimeForDB(activeDate, selectedHours, selectedMinutes, selectedPeriod);
+    const updateDateTimeValue = (newDate: Date | null, hours: string, minutes: string, period: string) => {
+      const activeDate = newDate || selectedDate || new Date();
+      const dbValue = formatDateTimeForDB(activeDate, hours, minutes, period);
       setCommittedValue(dbValue);
       if (onChange) {
         onChange({
@@ -131,27 +142,26 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
           },
         });
       }
-      setIsOpen(false);
     };
 
-    const handleCancel = () => {
-      // Revert states
-      if (committedValue) {
-        const { date, hours, minutes, period } = parseDateTime(committedValue);
-        if (date) {
-          setSelectedDate(date);
-          setCurrentMonth(date);
-          setSelectedHours(hours);
-          setSelectedMinutes(minutes);
-          setSelectedPeriod(period);
-        }
-      } else {
-        setSelectedDate(null);
-        setSelectedHours('12');
-        setSelectedMinutes('00');
-        setSelectedPeriod('AM');
-      }
-      setIsOpen(false);
+    const handleSelectDate = (date: Date) => {
+      setSelectedDate(date);
+      updateDateTimeValue(date, selectedHours, selectedMinutes, selectedPeriod);
+    };
+
+    const handleSelectHours = (hours: string) => {
+      setSelectedHours(hours);
+      updateDateTimeValue(selectedDate, hours, selectedMinutes, selectedPeriod);
+    };
+
+    const handleSelectMinutes = (minutes: string) => {
+      setSelectedMinutes(minutes);
+      updateDateTimeValue(selectedDate, selectedHours, minutes, selectedPeriod);
+    };
+
+    const handleSelectPeriod = (period: string) => {
+      setSelectedPeriod(period);
+      updateDateTimeValue(selectedDate, selectedHours, selectedMinutes, period);
     };
 
     const prevYear = () => {
@@ -328,7 +338,7 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setSelectedDate(dayObj.date)}
+                      onClick={() => handleSelectDate(dayObj.date)}
                       className={cn(
                         'h-7 w-7 flex items-center justify-center text-xs rounded-lg transition-colors font-medium',
                         dayObj.isCurrentMonth ? 'text-slate-800' : 'text-slate-300',
@@ -344,24 +354,6 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
                   );
                 })}
               </div>
-
-              {/* Footer Buttons inside Calendar wrapper */}
-              <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="flex-1 py-2 text-xs font-bold border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleApply}
-                  className="flex-1 py-2 text-xs font-bold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors"
-                >
-                  Apply
-                </button>
-              </div>
             </div>
 
             {/* Right Pane: Time Columns Picker (matching the 2nd screenshot styling details) */}
@@ -375,7 +367,7 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
                     <button
                       key={h}
                       type="button"
-                      onClick={() => setSelectedHours(h)}
+                      onClick={() => handleSelectHours(h)}
                       className={cn(
                         'h-7 w-7 shrink-0 text-xs font-medium rounded-lg transition-colors flex items-center justify-center',
                         selectedHours === h ? 'bg-slate-900 text-white font-bold' : 'text-slate-800 hover:bg-slate-50'
@@ -395,7 +387,7 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
                     <button
                       key={m}
                       type="button"
-                      onClick={() => setSelectedMinutes(m)}
+                      onClick={() => handleSelectMinutes(m)}
                       className={cn(
                         'h-7 w-7 shrink-0 text-xs font-medium rounded-lg transition-colors flex items-center justify-center',
                         selectedMinutes === m ? 'bg-slate-900 text-white font-bold' : 'text-slate-800 hover:bg-slate-50'
@@ -415,7 +407,7 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
                     <button
                       key={p}
                       type="button"
-                      onClick={() => setSelectedPeriod(p)}
+                      onClick={() => handleSelectPeriod(p)}
                       className={cn(
                         'h-7 w-10 shrink-0 text-xs font-medium rounded-lg transition-colors flex items-center justify-center',
                         selectedPeriod === p ? 'bg-slate-900 text-white font-bold' : 'text-slate-800 hover:bg-slate-50'

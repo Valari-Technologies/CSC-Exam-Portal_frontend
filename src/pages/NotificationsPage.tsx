@@ -378,19 +378,22 @@ export default function NotificationsPage() {
                 : 'All caught up! No unread alerts.'}
             </p>
           </div>
-          {unreadCount > 0 && (
-            <button
-              type="button"
-              onClick={() => markAllReadMutation.mutate()}
-              disabled={markAllReadMutation.isPending}
-              className="bg-[#1d4ed8] hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-md shadow-blue-600/20 transition-all flex items-center gap-2 shrink-0 cursor-pointer z-10"
-            >
-              <CheckCheck className="h-4 w-4" />
-              Mark all as read
-            </button>
-          )}
         </div>
       </div>
+
+      {unreadCount > 0 && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => markAllReadMutation.mutate()}
+            disabled={markAllReadMutation.isPending}
+            className="bg-[#1d4ed8] hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-md shadow-blue-600/20 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <CheckCheck className="h-4 w-4" />
+            Mark all as read
+          </button>
+        </div>
+      )}
 
       {/* Main List Area */}
       {isLoading ? (
