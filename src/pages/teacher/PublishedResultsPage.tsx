@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { Award, Download, FileSpreadsheet, FileText, Search } from 'lucide-react';
+import { Award, Download, FileSpreadsheet, FileText, Search, Eye } from 'lucide-react';
 import publishedResultsHeaderImg from '@/assets/dashboard_designs/Teacher/Published Results.webp';
 
 import { Badge } from '@/components/ui/Badge';
@@ -24,12 +24,7 @@ import { classLabel, cn } from '@/lib/utils';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useAuth } from '@/hooks/useAuth';
 
-function formatDate(iso: string | null): string {
-  if (!iso) return '--';
-  return new Date(iso).toLocaleString(undefined, {
-    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
-}
+
 
 export default function PublishedResultsPage() {
   const { user } = useAuth();
@@ -43,6 +38,8 @@ export default function PublishedResultsPage() {
   const [classFilter, setClassFilter] = useState('');
   const [sectionFilter, setSectionFilter] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
+  const [chapterFilter, setChapterFilter] = useState('');
+  const [lessonFilter, setLessonFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [classScope, setClassScope] = useState('assigned');
@@ -67,15 +64,52 @@ export default function PublishedResultsPage() {
   });
 
   const chaptersQuery = useQuery({
-    queryKey: ['chapters-dropdown'],
-    queryFn: () => chaptersService.list({ page_size: 200 }),
-    enabled: searchType === 'chapter_name',
+    queryKey: ['chapters-dropdown', subjectFilter],
+    queryFn: () => chaptersService.list({
+      page_size: 250,
+      ...(subjectFilter ? { subject: Number(subjectFilter) } : {}),
+    }),
   });
 
   const chaptersList = chaptersQuery.data?.results ?? [];
   const filteredChapters = chaptersList.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const chapterOptions = import.meta.env.SSR ? [] : (() => {
+    const list = [{ value: '', label: 'All Chapters' }];
+    for (const c of chaptersList) {
+      list.push({ value: String(c.id), label: c.name });
+    }
+    return list;
+  })();
+
+  const lessonOptions = import.meta.env.SSR ? [] : (() => {
+    const list = [{ value: '', label: 'All Lessons' }];
+    const unique = new Set<string>();
+    
+    if (chapterFilter) {
+      const selectedChapter = chaptersList.find((c) => String(c.id) === chapterFilter);
+      if (selectedChapter && selectedChapter.lessons) {
+        for (const l of selectedChapter.lessons) {
+          if (l) unique.add(l);
+        }
+      }
+    } else {
+      for (const ch of chaptersList) {
+        if (ch.lessons) {
+          for (const l of ch.lessons) {
+            if (l) unique.add(l);
+          }
+        }
+      }
+    }
+
+    for (const l of Array.from(unique).sort()) {
+      list.push({ value: l, label: l });
+    }
+    return list;
+  })();
 
   const queryParams: ResultListParams = {
     page,
@@ -84,6 +118,8 @@ export default function PublishedResultsPage() {
     ...(classFilter ? { school_class: Number(classFilter) } : {}),
     ...(sectionFilter ? { section: Number(sectionFilter) } : {}),
     ...(subjectFilter ? { subject: Number(subjectFilter) } : {}),
+    ...(chapterFilter ? { chapter: Number(chapterFilter) } : {}),
+    ...(lessonFilter ? { lesson: lessonFilter } : {}),
     ...(dateFrom ? { date_from: dateFrom } : {}),
     ...(dateTo ? { date_to: dateTo } : {}),
     ...(isTeacher ? { class_scope: classScope } : {}),
@@ -147,7 +183,7 @@ export default function PublishedResultsPage() {
 
   const classOptions = [
     { value: '', label: 'All' },
-    ...(isTeacher && classScope === 'assigned'
+    ...(isTeacher
       ? (assignedClasses?.map((c) => ({ value: String(c.id), label: c.name || '' })) || [])
       : (classesQuery.data?.results.map((c) => ({ value: String(c.id), label: classLabel(c) })) || []))
   ];
@@ -157,6 +193,17 @@ export default function PublishedResultsPage() {
     ...(isTeacher && classScope === 'assigned'
       ? (filteredSections.map((s) => ({ value: String(s.id), label: s.name || '' })) || [])
       : (sectionsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || []))
+  ];
+
+  const sectionDropdownOptions = [
+    { value: '', label: 'All Sections' },
+    ...(sectionsQuery.data?.results || []).map((s) => {
+      const clsLabel = classOptions.find((c) => c.value === classFilter)?.label || '';
+      return {
+        value: String(s.id),
+        label: `${clsLabel}-${s.name}`
+      };
+    })
   ];
 
   const subjectOptions = [
@@ -362,7 +409,7 @@ export default function PublishedResultsPage() {
         {/* Row 2, Col 1: Class View (only if teacher) */}
         {isTeacher && (
           <div className="space-y-1">
-            <Label className="text-xs font-black text-slate-550 uppercase tracking-wider">Class View</Label>
+            <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Class View</Label>
             <CustomSelect
               options={[
                 { value: 'assigned', label: 'Assigned Class' },
@@ -373,6 +420,8 @@ export default function PublishedResultsPage() {
                 setClassScope(val);
                 setClassFilter('');
                 setSectionFilter('');
+                setChapterFilter('');
+                setLessonFilter('');
                 resetPage();
               }}
               className="h-10"
@@ -386,40 +435,116 @@ export default function PublishedResultsPage() {
           <CustomSelect
             options={classOptions}
             value={classFilter}
-            onChange={(val) => { setClassFilter(val); setSectionFilter(''); resetPage(); }}
+            onChange={(val) => {
+              setClassFilter(val);
+              setSectionFilter('');
+              setChapterFilter('');
+              setLessonFilter('');
+              resetPage();
+            }}
             placeholder="All"
             className="h-10"
           />
         </div>
 
-        {/* Row 2, Col 3: Section */}
-        <div className="space-y-1">
-          <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Section</Label>
-          <CustomSelect
-            options={sectionOptions}
-            value={sectionFilter}
-            onChange={(val) => { setSectionFilter(val); resetPage(); }}
-            disabled={!classFilter}
-            placeholder="All"
-            className="h-10"
-          />
-        </div>
+        {/* Row 2, Col 3: Section (only if assigned view) */}
+        {classScope !== 'entire' && (
+          <div className="space-y-1">
+            <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Section</Label>
+            <CustomSelect
+              options={sectionOptions}
+              value={sectionFilter}
+              onChange={(val) => { setSectionFilter(val); resetPage(); }}
+              disabled={!classFilter}
+              placeholder="All"
+              className="h-10"
+            />
+          </div>
+        )}
 
-        {/* Row 2, Col 4: Subject */}
+        {/* Row 2, Col 4 / Col 3: Subject */}
         <div className="space-y-1">
           <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Subject</Label>
           <CustomSelect
             options={subjectOptions}
             value={subjectFilter}
-            onChange={(val) => { setSubjectFilter(val); resetPage(); }}
+            onChange={(val) => {
+              setSubjectFilter(val);
+              setChapterFilter('');
+              setLessonFilter('');
+              resetPage();
+            }}
             placeholder="All"
             className="h-10"
           />
         </div>
+
+        {/* Row 2, Col 4: Chapter (only if entire view) */}
+        {classScope === 'entire' && (
+          <div className="space-y-1">
+            <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Chapter</Label>
+            <CustomSelect
+              options={chapterOptions}
+              value={chapterFilter}
+              onChange={(val) => {
+                setChapterFilter(val);
+                setLessonFilter('');
+                resetPage();
+              }}
+              disabled={!subjectFilter}
+              placeholder={subjectFilter ? "All Chapters" : "Select Subject first"}
+              className="h-10"
+            />
+          </div>
+        )}
       </div>
 
       {/* table */}
       <div className="border border-slate-200/60 rounded-2xl overflow-hidden shadow-xs bg-white">
+        {classScope === 'entire' && (
+          <div className="bg-slate-50/80 border-b border-slate-200/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Section:</span>
+                <div className="w-48">
+                  <CustomSelect
+                    options={sectionDropdownOptions}
+                    value={sectionFilter}
+                    onChange={(val) => {
+                      setSectionFilter(val);
+                      resetPage();
+                    }}
+                    disabled={!classFilter}
+                    placeholder={classFilter ? "All Sections" : "Select Class first"}
+                    className="h-9 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Lessons:</span>
+                <div className="w-48">
+                  <CustomSelect
+                    options={lessonOptions}
+                    value={lessonFilter}
+                    onChange={(val) => {
+                      setLessonFilter(val);
+                      resetPage();
+                    }}
+                    placeholder="All Lessons"
+                    className="h-9 bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+            {classFilter && (
+              <div className="text-xs font-bold text-slate-500">
+                Published results for {classOptions.find(o => o.value === classFilter)?.label || ''} std - {sectionFilter ? sectionDropdownOptions.find(o => o.value === sectionFilter)?.label.split('-')[1] : 'All Sections'}
+              </div>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="py-12"><Spinner label="Loading published results..." /></div>
         ) : isError ? (
@@ -436,11 +561,11 @@ export default function PublishedResultsPage() {
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Student</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Class</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Subject</TableHead>
+                <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Lessons</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Test</TableHead>
                 <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Marks</TableHead>
                 <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Percentage</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Result</TableHead>
-                <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Published</TableHead>
                 <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -456,6 +581,7 @@ export default function PublishedResultsPage() {
                     {r.class_name ? `${r.class_name}${r.section_name ? `-${r.section_name}` : ''}` : '--'}
                   </TableCell>
                   <TableCell className="font-semibold text-slate-900 py-3.5">{r.subject_name}</TableCell>
+                  <TableCell className="font-semibold text-slate-900 py-3.5">{r.lesson_name || '—'}</TableCell>
                   <TableCell className="font-semibold text-slate-900 py-3.5">{r.test_title}</TableCell>
                   <TableCell className="text-right font-bold text-indigo-600 py-3.5">
                     {r.obtained_marks !== null
@@ -473,10 +599,11 @@ export default function PublishedResultsPage() {
                       {r.passed ? 'Pass' : 'Fail'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm font-semibold text-slate-900 py-3.5">{formatDate(r.published_at)}</TableCell>
                   <TableCell className="text-right py-3.5">
-                    <Button asChild variant="outline" size="sm">
-                      <Link to={`/teacher/evaluate/${r.id}`}>View</Link>
+                    <Button variant="ghost" size="icon" asChild aria-label="View">
+                      <Link to={`/teacher/evaluate/${r.id}`}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
                     </Button>
                   </TableCell>
                 </TableRow>

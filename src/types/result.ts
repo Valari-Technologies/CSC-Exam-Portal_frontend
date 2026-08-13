@@ -11,6 +11,7 @@ export interface ResultListItem {
   test: number;
   test_title: string;
   subject_name: string;
+  lesson_name: string | null;
   assignment: number;
   obtained_marks: string;
   total_marks: string;

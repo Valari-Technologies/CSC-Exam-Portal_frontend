@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { Ban, Edit, Eye, FileUp, Plus, Power, Search, Trash2, Users } from 'lucide-react';
+import { Ban, Edit, Eye, FileUp, Plus, Power, Search, Trash2, Users, ArrowLeft } from 'lucide-react';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -142,6 +142,15 @@ export default function StudentsListPage() {
 
   return (
     <div className="space-y-6">
+      <button
+        type="button"
+        onClick={() => navigate('/reports')}
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs text-xs font-bold text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-all w-fit cursor-pointer animate-fade-in"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
+
       {/* Top Header Card with student_sub_header.webp background */}
       <div className="relative group rounded-[20px] overflow-hidden shadow-sm border border-slate-200/60 min-h-[160px] md:min-h-[180px] flex items-center bg-[#f0f7ff]">
         <img

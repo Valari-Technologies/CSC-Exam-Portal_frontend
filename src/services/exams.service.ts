@@ -28,6 +28,9 @@ export interface SessionListParams {
   search?: string;
   search_type?: string;
   ordering?: string;
+  class_scope?: string;
+  lesson?: string;
+  chapter?: number;
 }
 
 /** One per-question mark override sent to the evaluate endpoint. */

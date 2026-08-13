@@ -62,6 +62,7 @@ export interface ExamSessionListItem {
   test: number;
   test_title: string;
   subject_name: string;
+  lesson_name: string | null;
   assignment: number;
   status: ExamSessionStatus;
   started_at: string;

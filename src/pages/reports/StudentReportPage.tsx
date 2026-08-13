@@ -1,5 +1,6 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -21,6 +22,7 @@ function formatDate(iso: string): string {
 export default function StudentReportPage() {
   const { id } = useParams<{ id: string }>();
   const studentId = Number(id);
+  const navigate = useNavigate();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['reports', 'student', studentId],
@@ -46,6 +48,15 @@ export default function StudentReportPage() {
 
   return (
     <div className="space-y-6">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs text-xs font-bold text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-all w-fit cursor-pointer"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
+
       <div>
         <h1 className="text-2xl font-semibold">Student Report</h1>
         {/* A student may have no email; without the guard this renders "Ana Roy ()". */}

@@ -23,6 +23,8 @@ export interface ResultListParams {
   search_type?: string;
   ordering?: string;
   class_scope?: string;
+  lesson?: string;
+  chapter?: number;
 }
 
 export type ExportFormat = 'csv' | 'excel' | 'pdf';

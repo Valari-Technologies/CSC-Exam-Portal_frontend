@@ -1,6 +1,6 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Users, TrendingUp, Award, ArrowDown, ArrowUp, Percent } from 'lucide-react';
+import { Users, TrendingUp, Award, ArrowDown, ArrowUp, Percent, ArrowLeft } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
@@ -31,6 +31,7 @@ function StatCard({
 export default function TestReportPage() {
   const { id } = useParams<{ id: string }>();
   const testId = Number(id);
+  const navigate = useNavigate();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['reports', 'test', testId],
@@ -59,6 +60,15 @@ export default function TestReportPage() {
 
   return (
     <div className="space-y-6">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs text-xs font-bold text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-all w-fit cursor-pointer"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
+
       <div>
         <h1 className="text-2xl font-semibold">Test Analysis</h1>
         <p className="text-sm text-muted-foreground">{data.test_title}</p>

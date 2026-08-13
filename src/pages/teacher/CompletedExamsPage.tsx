@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { ClipboardCheck, Search } from 'lucide-react';
+import { ClipboardCheck, Search, Eye } from 'lucide-react';
 import completeExamHeaderImg from '@/assets/dashboard_designs/Teacher/complete exam.webp';
 
 import { Button } from '@/components/ui/Button';
@@ -23,12 +23,7 @@ import { classLabel } from '@/lib/utils';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useAuth } from '@/hooks/useAuth';
 
-function formatDateTime(iso: string | null): string {
-  if (!iso) return '--';
-  return new Date(iso).toLocaleString(undefined, {
-    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-  });
-}
+
 
 export default function CompletedExamsPage() {
   const { user } = useAuth();
@@ -42,6 +37,8 @@ export default function CompletedExamsPage() {
   const [classFilter, setClassFilter] = useState('');
   const [sectionFilter, setSectionFilter] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
+  const [chapterFilter, setChapterFilter] = useState('');
+  const [lessonFilter, setLessonFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [classScope, setClassScope] = useState('assigned');
@@ -65,9 +62,11 @@ export default function CompletedExamsPage() {
   });
 
   const chaptersQuery = useQuery({
-    queryKey: ['chapters-dropdown'],
-    queryFn: () => chaptersService.list({ page_size: 200 }),
-    enabled: searchType === 'chapter_name',
+    queryKey: ['chapters-dropdown', subjectFilter],
+    queryFn: () => chaptersService.list({
+      page_size: 250,
+      ...(subjectFilter ? { subject: Number(subjectFilter) } : {}),
+    }),
   });
 
   const chaptersList = chaptersQuery.data?.results ?? [];
@@ -75,8 +74,43 @@ export default function CompletedExamsPage() {
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const chapterOptions = import.meta.env.SSR ? [] : (() => {
+    const list = [{ value: '', label: 'All Chapters' }];
+    for (const c of chaptersList) {
+      list.push({ value: String(c.id), label: c.name });
+    }
+    return list;
+  })();
+
+  const lessonOptions = import.meta.env.SSR ? [] : (() => {
+    const list = [{ value: '', label: 'All Lessons' }];
+    const unique = new Set<string>();
+    
+    if (chapterFilter) {
+      const selectedChapter = chaptersList.find((c) => String(c.id) === chapterFilter);
+      if (selectedChapter && selectedChapter.lessons) {
+        for (const l of selectedChapter.lessons) {
+          if (l) unique.add(l);
+        }
+      }
+    } else {
+      for (const ch of chaptersList) {
+        if (ch.lessons) {
+          for (const l of ch.lessons) {
+            if (l) unique.add(l);
+          }
+        }
+      }
+    }
+
+    for (const l of Array.from(unique).sort()) {
+      list.push({ value: l, label: l });
+    }
+    return list;
+  })();
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['exam-sessions', { page, search, searchType, classFilter, sectionFilter, subjectFilter, dateFrom, dateTo, classScope }],
+    queryKey: ['exam-sessions', { page, search, searchType, classFilter, sectionFilter, subjectFilter, chapterFilter, lessonFilter, dateFrom, dateTo, classScope }],
     queryFn: () =>
       examsService.listSessions({
         page,
@@ -89,6 +123,8 @@ export default function CompletedExamsPage() {
         ...(classFilter ? { school_class: Number(classFilter) } : {}),
         ...(sectionFilter ? { section: Number(sectionFilter) } : {}),
         ...(subjectFilter ? { subject: Number(subjectFilter) } : {}),
+        ...(chapterFilter ? { chapter: Number(chapterFilter) } : {}),
+        ...(lessonFilter ? { lesson: lessonFilter } : {}),
         ...(dateFrom ? { date_from: dateFrom } : {}),
         ...(dateTo ? { date_to: dateTo } : {}),
         ...(isTeacher ? { class_scope: classScope } : {}),
@@ -110,13 +146,13 @@ export default function CompletedExamsPage() {
 
   const assignedClasses = isTeacher
     ? Array.from(
-        new Map(
-          (assignmentsQuery.data?.results || []).map((a) => [
-            a.school_class,
-            { id: a.school_class, name: a.class_name }
-          ])
-        ).values()
-      )
+      new Map(
+        (assignmentsQuery.data?.results || []).map((a) => [
+          a.school_class,
+          { id: a.school_class, name: a.class_name }
+        ])
+      ).values()
+    )
     : null;
 
   const teacherHasWholeClass = isTeacher
@@ -125,10 +161,10 @@ export default function CompletedExamsPage() {
 
   const teacherSectionIds = isTeacher
     ? new Set(
-        (assignmentsQuery.data?.results || [])
-          .filter((a) => a.school_class === Number(classFilter) && a.section !== null)
-          .map((a) => a.section)
-      )
+      (assignmentsQuery.data?.results || [])
+        .filter((a) => a.school_class === Number(classFilter) && a.section !== null)
+        .map((a) => a.section)
+    )
     : null;
 
   const filteredSections = sectionsQuery.data?.results.filter((s) => {
@@ -138,20 +174,20 @@ export default function CompletedExamsPage() {
 
   const assignedSubjects = isTeacher
     ? Array.from(
-        new Map(
-          (assignmentsQuery.data?.results || [])
-            .filter((a) => a.subject !== null && (!classFilter || a.school_class === Number(classFilter)))
-            .map((a) => [
-              a.subject,
-              { id: a.subject, name: a.subject_name }
-            ])
-        ).values()
-      )
+      new Map(
+        (assignmentsQuery.data?.results || [])
+          .filter((a) => a.subject !== null && (!classFilter || a.school_class === Number(classFilter)))
+          .map((a) => [
+            a.subject,
+            { id: a.subject, name: a.subject_name }
+          ])
+      ).values()
+    )
     : null;
 
   const classOptions = [
     { value: '', label: 'All' },
-    ...(isTeacher && classScope === 'assigned'
+    ...(isTeacher
       ? (assignedClasses?.map((c) => ({ value: String(c.id), label: c.name || '' })) || [])
       : (classesQuery.data?.results.map((c) => ({ value: String(c.id), label: classLabel(c) })) || []))
   ];
@@ -161,6 +197,17 @@ export default function CompletedExamsPage() {
     ...(isTeacher && classScope === 'assigned'
       ? (filteredSections.map((s) => ({ value: String(s.id), label: s.name || '' })) || [])
       : (sectionsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || []))
+  ];
+
+  const sectionDropdownOptions = [
+    { value: '', label: 'All Sections' },
+    ...(sectionsQuery.data?.results || []).map((s) => {
+      const clsLabel = classOptions.find((c) => c.value === classFilter)?.label || '';
+      return {
+        value: String(s.id),
+        label: `${clsLabel}-${s.name}`
+      };
+    })
   ];
 
   const subjectOptions = [
@@ -229,9 +276,8 @@ export default function CompletedExamsPage() {
                       setShowCategoryDropdown(false);
                       resetPage();
                     }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${
-                      searchType === 'student_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${searchType === 'student_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                      }`}
                   >
                     Student Name
                   </button>
@@ -243,9 +289,8 @@ export default function CompletedExamsPage() {
                       setShowCategoryDropdown(false);
                       resetPage();
                     }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${
-                      searchType === 'chapter_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${searchType === 'chapter_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                      }`}
                   >
                     Chapter Name
                   </button>
@@ -257,9 +302,8 @@ export default function CompletedExamsPage() {
                       setShowCategoryDropdown(false);
                       resetPage();
                     }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${
-                      searchType === 'student_id' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${searchType === 'student_id' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                      }`}
                   >
                     Student ID
                   </button>
@@ -276,8 +320,8 @@ export default function CompletedExamsPage() {
                 className="pl-9 py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 w-full"
                 placeholder={
                   searchType === 'student_name' ? 'Search student name...' :
-                  searchType === 'chapter_name' ? 'Search chapter name...' :
-                  'Search student ID...'
+                    searchType === 'chapter_name' ? 'Search chapter name...' :
+                      'Search student ID...'
                 }
                 value={search}
                 onFocus={() => {
@@ -338,7 +382,7 @@ export default function CompletedExamsPage() {
         {/* Row 2, Col 1: Class View (only if teacher) */}
         {isTeacher && (
           <div className="space-y-1">
-            <Label className="text-xs font-black text-slate-550 uppercase tracking-wider">Class View</Label>
+            <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Class View</Label>
             <CustomSelect
               options={[
                 { value: 'assigned', label: 'Assigned Class' },
@@ -349,6 +393,8 @@ export default function CompletedExamsPage() {
                 setClassScope(val);
                 setClassFilter('');
                 setSectionFilter('');
+                setChapterFilter('');
+                setLessonFilter('');
                 resetPage();
               }}
               className="h-10"
@@ -362,42 +408,118 @@ export default function CompletedExamsPage() {
           <CustomSelect
             options={classOptions}
             value={classFilter}
-            onChange={(val) => { setClassFilter(val); setSectionFilter(''); resetPage(); }}
+            onChange={(val) => {
+              setClassFilter(val);
+              setSectionFilter('');
+              setChapterFilter('');
+              setLessonFilter('');
+              resetPage();
+            }}
             placeholder="All"
             className="h-10"
           />
         </div>
 
-        {/* Row 2, Col 3: Section */}
-        <div className="space-y-1">
-          <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Section</Label>
-          <CustomSelect
-            options={sectionOptions}
-            value={sectionFilter}
-            onChange={(val) => { setSectionFilter(val); resetPage(); }}
-            disabled={!classFilter}
-            placeholder="All"
-            className="h-10"
-          />
-        </div>
+        {/* Row 2, Col 3: Section (only if assigned view) */}
+        {classScope !== 'entire' && (
+          <div className="space-y-1">
+            <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Section</Label>
+            <CustomSelect
+              options={sectionOptions}
+              value={sectionFilter}
+              onChange={(val) => { setSectionFilter(val); resetPage(); }}
+              disabled={!classFilter}
+              placeholder="All"
+              className="h-10"
+            />
+          </div>
+        )}
 
-        {/* Row 2, Col 4: Subject */}
+        {/* Row 2, Col 4 / Col 3: Subject */}
         <div className="space-y-1">
           <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Subject</Label>
           <CustomSelect
             options={subjectOptions}
             value={subjectFilter}
-            onChange={(val) => { setSubjectFilter(val); resetPage(); }}
+            onChange={(val) => {
+              setSubjectFilter(val);
+              setChapterFilter('');
+              setLessonFilter('');
+              resetPage();
+            }}
             placeholder="All"
             className="h-10"
           />
         </div>
+
+        {/* Row 2, Col 4: Chapter (only if entire view) */}
+        {classScope === 'entire' && (
+          <div className="space-y-1">
+            <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Chapter</Label>
+            <CustomSelect
+              options={chapterOptions}
+              value={chapterFilter}
+              onChange={(val) => {
+                setChapterFilter(val);
+                setLessonFilter('');
+                resetPage();
+              }}
+              disabled={!subjectFilter}
+              placeholder={subjectFilter ? "All Chapters" : "Select Subject first"}
+              className="h-10"
+            />
+          </div>
+        )}
       </div>
 
 
 
       {/* table */}
       <div className="border border-slate-200/60 rounded-2xl overflow-hidden shadow-xs bg-white">
+        {classScope === 'entire' && (
+          <div className="bg-slate-50/80 border-b border-slate-200/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Section:</span>
+                <div className="w-48">
+                  <CustomSelect
+                    options={sectionDropdownOptions}
+                    value={sectionFilter}
+                    onChange={(val) => {
+                      setSectionFilter(val);
+                      resetPage();
+                    }}
+                    disabled={!classFilter}
+                    placeholder={classFilter ? "All Sections" : "Select Class first"}
+                    className="h-9 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Lessons:</span>
+                <div className="w-48">
+                  <CustomSelect
+                    options={lessonOptions}
+                    value={lessonFilter}
+                    onChange={(val) => {
+                      setLessonFilter(val);
+                      resetPage();
+                    }}
+                    placeholder="All Lessons"
+                    className="h-9 bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+            {classFilter && (
+              <div className="text-xs font-bold text-slate-500">
+                Completed exams for {classOptions.find(o => o.value === classFilter)?.label || ''} std - {sectionFilter ? sectionDropdownOptions.find(o => o.value === sectionFilter)?.label.split('-')[1] : 'All Sections'}
+              </div>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="py-12"><Spinner label="Loading completed exams..." /></div>
         ) : isError ? (
@@ -414,9 +536,9 @@ export default function CompletedExamsPage() {
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Student</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Class</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Subject</TableHead>
+                <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Lessons</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Test</TableHead>
                 <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Score</TableHead>
-                <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Submitted</TableHead>
                 <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -433,20 +555,20 @@ export default function CompletedExamsPage() {
                       {s.class_name ? `${s.class_name}${s.section_name ? `-${s.section_name}` : ''}` : '--'}
                     </TableCell>
                     <TableCell className="font-semibold text-slate-900 py-3.5">{s.subject_name}</TableCell>
+                    <TableCell className="font-semibold text-slate-900 py-3.5">{s.lesson_name || '—'}</TableCell>
                     <TableCell className="font-semibold text-slate-900 py-3.5">{s.test_title}</TableCell>
                     <TableCell className="text-right font-bold text-indigo-600 py-3.5">
                       {s.obtained_marks !== null
                         ? `${parseFloat(s.obtained_marks).toFixed(1)} / ${parseFloat(s.total_marks ?? '0').toFixed(1)}`
                         : '--'}
                     </TableCell>
-                    <TableCell className="text-sm font-semibold text-slate-900 py-3.5">{formatDateTime(s.submitted_at)}</TableCell>
                     <TableCell className="text-right py-3.5">
                       {/* The Status COLUMN is gone, but the session's status is
                           still what decides whether this opens for evaluation or
                           read-only — so the row keeps reading it. */}
-                      <Button asChild variant="outline" size="sm">
+                      <Button variant="ghost" size="icon" asChild aria-label="View">
                         <Link to={`/teacher/evaluate/${s.id}`}>
-                          {s.status === 'submitted' ? 'Review' : 'View'}
+                          <Eye className="h-4 w-4" />
                         </Link>
                       </Button>
                     </TableCell>
