@@ -400,7 +400,7 @@ export default function StudentDashboardPage() {
               {/* Dynamic Left Text Overlay */}
               <div className="relative z-10 w-full sm:w-[48%] md:w-[42%] lg:w-[38%] max-w-md pl-4 sm:pl-6 md:pl-8 lg:pl-10 pr-2 py-4 flex flex-col justify-center min-w-0">
                 <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-[#0f172a] tracking-tight leading-tight drop-shadow-sm">
-                  Welcome back, {studentName}! 👋
+                  Welcome back, {studentName}!👋
                 </h1>
                 <p className="text-slate-600 text-xs sm:text-sm md:text-base lg:text-lg mt-1.5 sm:mt-2 font-medium leading-relaxed">
                   Here&apos;s what&apos;s happening with your exams today.

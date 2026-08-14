@@ -108,8 +108,8 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
     setValue,
     formState: { errors },
   } = useForm<TeacherFormValues>({
-    // Stricter rules when adding; lenient when editing (see schema comments).
-    resolver: zodResolver(initialData ? teacherSchema : createTeacherSchema),
+    // Stricter rules enforced for both adding and editing.
+    resolver: zodResolver(createTeacherSchema),
     defaultValues: {
       email: '',
       full_name: '',
@@ -416,12 +416,7 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="employee_id">
-                Employee ID{' '}
-                {initialData ? (
-                  <span className="text-muted-foreground font-normal">(optional)</span>
-                ) : (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
+                Employee ID <span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input id="employee_id" {...register('employee_id')} />
               {errors.employee_id && (
@@ -430,17 +425,12 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="gender">
-                Gender{' '}
-                {initialData ? (
-                  <span className="text-muted-foreground font-normal">(optional)</span>
-                ) : (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
+                Gender <span className="ml-0.5 text-destructive">*</span>
               </Label>
               <input type="hidden" {...register('gender')} />
               <CustomSelect
                 options={[
-                  { value: '', label: 'Not specified' },
+                  { value: '', label: 'Select gender' },
                   ...GENDER_OPTIONS
                 ]}
                 value={watch('gender') ?? ''}
@@ -451,12 +441,7 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="qualification">
-                Qualification{' '}
-                {initialData ? (
-                  <span className="text-muted-foreground font-normal">(optional)</span>
-                ) : (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
+                Qualification <span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input id="qualification" {...register('qualification')} />
               {errors.qualification && (
@@ -465,12 +450,7 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
             </div>
             <div className="space-y-1.5 md:col-span-2">
               <Label htmlFor="joining_date">
-                Joining Date{' '}
-                {initialData ? (
-                  <span className="text-muted-foreground font-normal">(optional)</span>
-                ) : (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
+                Joining Date <span className="ml-0.5 text-destructive">*</span>
               </Label>
               <Input id="joining_date" type="date" {...register('joining_date')} className="max-w-xs" />
               {errors.joining_date && (

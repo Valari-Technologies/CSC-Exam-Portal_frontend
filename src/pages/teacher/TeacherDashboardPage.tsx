@@ -92,7 +92,7 @@ export default function TeacherDashboardPage() {
           />
           <div className="relative z-10 w-full sm:w-[50%] md:w-[45%] lg:w-[40%] max-w-md pl-6 sm:pl-8 md:pl-10 lg:pl-12 py-4 flex flex-col justify-center min-w-0">
             <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-[#0f172a] tracking-tight leading-tight drop-shadow-sm flex items-center gap-2">
-              Welcome, {user?.full_name ?? 'Teacher'}! 👋
+              Welcome, {user?.full_name ?? 'Teacher'}!👋
             </h1>
             <p className="text-slate-600 text-xs sm:text-sm md:text-base lg:text-lg mt-1.5 sm:mt-2 font-medium leading-relaxed">
               Here's your teaching overview.

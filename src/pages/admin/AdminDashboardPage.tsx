@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
           />
           <div className="relative z-10 w-full sm:w-[48%] md:w-[42%] lg:w-[38%] max-w-md pl-6 sm:pl-8 md:pl-10 lg:pl-12 pr-2 py-6 flex flex-col justify-center min-w-0">
             <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-[#0f172a] tracking-tight leading-tight drop-shadow-sm">
-              Welcome, {user?.full_name ?? 'Super Admin'}! 👋
+              Welcome, {user?.full_name ?? 'Super Admin'}!👋
             </h1>
             <p className="text-slate-600 text-xs sm:text-sm md:text-base lg:text-lg mt-1.5 sm:mt-2 font-medium leading-relaxed">
               Platform-wide overview of CSC Exam Portal.
