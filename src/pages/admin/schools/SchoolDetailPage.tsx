@@ -236,6 +236,13 @@ export default function SchoolDetailPage() {
             </div>
           </div>
           <div className="flex items-start gap-3">
+            <Phone className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div>
+              <p className="text-muted-foreground text-xs">LAN (Landline)</p>
+              <p>{school.lan || '—'}</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
             <BookOpen className="h-4 w-4 mt-0.5 text-muted-foreground" />
             <div>
               <p className="text-muted-foreground text-xs">School Board</p>

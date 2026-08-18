@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { ClipboardCheck, Search, Eye } from 'lucide-react';
+import { ClipboardCheck, Search } from 'lucide-react';
 import completeExamHeaderImg from '@/assets/dashboard_designs/Teacher/complete exam.webp';
 
 import { Button } from '@/components/ui/Button';
@@ -16,32 +16,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table';
-import { classesService, sectionsService, subjectsService, chaptersService } from '@/services/academics.service';
+import { classesService, sectionsService, subjectsService } from '@/services/academics.service';
 import { examsService } from '@/services/exams.service';
-import { teachersService } from '@/services/teachers.service';
 import { classLabel } from '@/lib/utils';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { useAuth } from '@/hooks/useAuth';
 
-
+function formatDateTime(iso: string | null): string {
+  if (!iso) return '--';
+  return new Date(iso).toLocaleString(undefined, {
+    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+  });
+}
 
 export default function CompletedExamsPage() {
-  const { user } = useAuth();
-  const isTeacher = user?.role === 'teacher';
-
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState('student_name');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [classFilter, setClassFilter] = useState('');
   const [sectionFilter, setSectionFilter] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('');
-  const [chapterFilter, setChapterFilter] = useState('');
-  const [lessonFilter, setLessonFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [classScope, setClassScope] = useState('assigned');
 
   const classesQuery = useQuery({
     queryKey: ['classes-dropdown'],
@@ -61,56 +57,8 @@ export default function CompletedExamsPage() {
       }),
   });
 
-  const chaptersQuery = useQuery({
-    queryKey: ['chapters-dropdown', subjectFilter],
-    queryFn: () => chaptersService.list({
-      page_size: 250,
-      ...(subjectFilter ? { subject: Number(subjectFilter) } : {}),
-    }),
-  });
-
-  const chaptersList = chaptersQuery.data?.results ?? [];
-  const filteredChapters = chaptersList.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const chapterOptions = import.meta.env.SSR ? [] : (() => {
-    const list = [{ value: '', label: 'All Chapters' }];
-    for (const c of chaptersList) {
-      list.push({ value: String(c.id), label: c.name });
-    }
-    return list;
-  })();
-
-  const lessonOptions = import.meta.env.SSR ? [] : (() => {
-    const list = [{ value: '', label: 'All Lessons' }];
-    const unique = new Set<string>();
-    
-    if (chapterFilter) {
-      const selectedChapter = chaptersList.find((c) => String(c.id) === chapterFilter);
-      if (selectedChapter && selectedChapter.lessons) {
-        for (const l of selectedChapter.lessons) {
-          if (l) unique.add(l);
-        }
-      }
-    } else {
-      for (const ch of chaptersList) {
-        if (ch.lessons) {
-          for (const l of ch.lessons) {
-            if (l) unique.add(l);
-          }
-        }
-      }
-    }
-
-    for (const l of Array.from(unique).sort()) {
-      list.push({ value: l, label: l });
-    }
-    return list;
-  })();
-
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['exam-sessions', { page, search, searchType, classFilter, sectionFilter, subjectFilter, chapterFilter, lessonFilter, dateFrom, dateTo, classScope }],
+    queryKey: ['exam-sessions', { page, search, searchType, classFilter, sectionFilter, subjectFilter, dateFrom, dateTo }],
     queryFn: () =>
       examsService.listSessions({
         page,
@@ -123,11 +71,8 @@ export default function CompletedExamsPage() {
         ...(classFilter ? { school_class: Number(classFilter) } : {}),
         ...(sectionFilter ? { section: Number(sectionFilter) } : {}),
         ...(subjectFilter ? { subject: Number(subjectFilter) } : {}),
-        ...(chapterFilter ? { chapter: Number(chapterFilter) } : {}),
-        ...(lessonFilter ? { lesson: lessonFilter } : {}),
         ...(dateFrom ? { date_from: dateFrom } : {}),
         ...(dateTo ? { date_to: dateTo } : {}),
-        ...(isTeacher ? { class_scope: classScope } : {}),
         ordering: '-submitted_at',
       }),
     placeholderData: keepPreviousData,
@@ -138,83 +83,19 @@ export default function CompletedExamsPage() {
 
   const resetPage = () => setPage(1);
 
-  const assignmentsQuery = useQuery({
-    queryKey: ['teacher-my-assignments'],
-    queryFn: () => teachersService.listAssignments({ page_size: 100 }),
-    enabled: isTeacher,
-  });
-
-  const assignedClasses = isTeacher
-    ? Array.from(
-      new Map(
-        (assignmentsQuery.data?.results || []).map((a) => [
-          a.school_class,
-          { id: a.school_class, name: a.class_name }
-        ])
-      ).values()
-    )
-    : null;
-
-  const teacherHasWholeClass = isTeacher
-    ? (assignmentsQuery.data?.results || []).some((a) => a.school_class === Number(classFilter) && a.section === null)
-    : false;
-
-  const teacherSectionIds = isTeacher
-    ? new Set(
-      (assignmentsQuery.data?.results || [])
-        .filter((a) => a.school_class === Number(classFilter) && a.section !== null)
-        .map((a) => a.section)
-    )
-    : null;
-
-  const filteredSections = sectionsQuery.data?.results.filter((s) => {
-    if (!isTeacher || teacherHasWholeClass) return true;
-    return teacherSectionIds?.has(s.id);
-  }) || [];
-
-  const assignedSubjects = isTeacher
-    ? Array.from(
-      new Map(
-        (assignmentsQuery.data?.results || [])
-          .filter((a) => a.subject !== null && (!classFilter || a.school_class === Number(classFilter)))
-          .map((a) => [
-            a.subject,
-            { id: a.subject, name: a.subject_name }
-          ])
-      ).values()
-    )
-    : null;
-
   const classOptions = [
     { value: '', label: 'All' },
-    ...(isTeacher
-      ? (assignedClasses?.map((c) => ({ value: String(c.id), label: c.name || '' })) || [])
-      : (classesQuery.data?.results.map((c) => ({ value: String(c.id), label: classLabel(c) })) || []))
+    ...(classesQuery.data?.results.map((c) => ({ value: String(c.id), label: classLabel(c) })) || [])
   ];
 
   const sectionOptions = [
     { value: '', label: 'All' },
-    ...(isTeacher && classScope === 'assigned'
-      ? (filteredSections.map((s) => ({ value: String(s.id), label: s.name || '' })) || [])
-      : (sectionsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || []))
-  ];
-
-  const sectionDropdownOptions = [
-    { value: '', label: 'All Sections' },
-    ...(sectionsQuery.data?.results || []).map((s) => {
-      const clsLabel = classOptions.find((c) => c.value === classFilter)?.label || '';
-      return {
-        value: String(s.id),
-        label: `${clsLabel}-${s.name}`
-      };
-    })
+    ...(sectionsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || [])
   ];
 
   const subjectOptions = [
     { value: '', label: 'All' },
-    ...(isTeacher && classScope === 'assigned'
-      ? (assignedSubjects?.map((s) => ({ value: String(s.id), label: s.name || '' })) || [])
-      : (subjectsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || []))
+    ...(subjectsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || [])
   ];
 
   return (
@@ -241,11 +122,10 @@ export default function CompletedExamsPage() {
       </div>
 
       {/* filters */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-        {/* Row 1, Col 1-2: Search bar */}
-        <div className="space-y-1 col-span-1 sm:col-span-2">
+      <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-xs grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
+        <div className="space-y-1 col-span-2">
           <Label htmlFor="search" className="text-xs font-black text-slate-550 uppercase tracking-wider">
-            Search By {searchType === 'student_name' ? 'Student Name' : searchType === 'chapter_name' ? 'Chapter Name' : 'Student ID'}
+            Search By {searchType === 'student_name' ? 'Student Name' : 'Student ID'}
           </Label>
           <div className="flex gap-2 relative">
             {/* Category Select Dropdown */}
@@ -254,12 +134,11 @@ export default function CompletedExamsPage() {
                 type="button"
                 onClick={() => {
                   setShowCategoryDropdown(!showCategoryDropdown);
-                  setShowSuggestions(false);
                 }}
                 className="flex items-center justify-between gap-1.5 h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors w-32"
               >
                 <span className="truncate">
-                  {searchType === 'student_name' ? 'Student Name' : searchType === 'chapter_name' ? 'Chapter Name' : 'Student ID'}
+                  {searchType === 'student_name' ? 'Student Name' : 'Student ID'}
                 </span>
                 <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -276,23 +155,11 @@ export default function CompletedExamsPage() {
                       setShowCategoryDropdown(false);
                       resetPage();
                     }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${searchType === 'student_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
-                      }`}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${
+                      searchType === 'student_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                    }`}
                   >
                     Student Name
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={() => {
-                      setSearchType('chapter_name');
-                      setSearch('');
-                      setShowCategoryDropdown(false);
-                      resetPage();
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${searchType === 'chapter_name' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
-                      }`}
-                  >
-                    Chapter Name
                   </button>
                   <button
                     type="button"
@@ -302,8 +169,9 @@ export default function CompletedExamsPage() {
                       setShowCategoryDropdown(false);
                       resetPage();
                     }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${searchType === 'student_id' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
-                      }`}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-bold transition-colors ${
+                      searchType === 'student_id' ? 'text-indigo-600 bg-slate-50/50' : 'text-slate-700'
+                    }`}
                   >
                     Student ID
                   </button>
@@ -311,7 +179,7 @@ export default function CompletedExamsPage() {
               )}
             </div>
 
-            {/* Input with Suggestions dropdown */}
+            {/* Input */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
               <Input
@@ -319,207 +187,65 @@ export default function CompletedExamsPage() {
                 autoComplete="off"
                 className="pl-9 py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 w-full"
                 placeholder={
-                  searchType === 'student_name' ? 'Search student name...' :
-                    searchType === 'chapter_name' ? 'Search chapter name...' :
-                      'Search student ID...'
+                  searchType === 'student_name' ? 'Search student name...' : 'Search student ID...'
                 }
                 value={search}
-                onFocus={() => {
-                  if (searchType === 'chapter_name') {
-                    setShowSuggestions(true);
-                  }
-                }}
                 onBlur={() => {
                   setTimeout(() => {
-                    setShowSuggestions(false);
                     setShowCategoryDropdown(false);
                   }, 200);
                 }}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   resetPage();
-                  if (searchType === 'chapter_name') {
-                    setShowSuggestions(true);
-                  }
                 }}
               />
-
-              {showSuggestions && searchType === 'chapter_name' && filteredChapters.length > 0 && (
-                <div className="absolute left-0 right-0 mt-1 max-h-60 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-y-auto py-1">
-                  {filteredChapters.map((chapter) => (
-                    <button
-                      key={chapter.id}
-                      type="button"
-                      onMouseDown={() => {
-                        setSearch(chapter.name);
-                        setShowSuggestions(false);
-                        resetPage();
-                      }}
-                      className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-slate-50 last:border-0"
-                    >
-                      <div className="font-semibold text-slate-800">{chapter.name}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{chapter.subject_name}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
-
-        {/* Row 1, Col 3: From Date */}
-        <div className="space-y-1">
-          <Label htmlFor="date_from" className="text-xs font-black text-slate-550 uppercase tracking-wider">From</Label>
-          <Input id="date_from" type="date" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); resetPage(); }} />
-        </div>
-
-        {/* Row 1, Col 4: To Date */}
-        <div className="space-y-1">
-          <Label htmlFor="date_to" className="text-xs font-black text-slate-550 uppercase tracking-wider">To</Label>
-          <Input id="date_to" type="date" align="right" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateTo} onChange={(e) => { setDateTo(e.target.value); resetPage(); }} />
-        </div>
-
-        {/* Row 2, Col 1: Class View (only if teacher) */}
-        {isTeacher && (
-          <div className="space-y-1">
-            <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Class View</Label>
-            <CustomSelect
-              options={[
-                { value: 'assigned', label: 'Assigned Class' },
-                { value: 'entire', label: 'Entire Class' }
-              ]}
-              value={classScope}
-              onChange={(val) => {
-                setClassScope(val);
-                setClassFilter('');
-                setSectionFilter('');
-                setChapterFilter('');
-                setLessonFilter('');
-                resetPage();
-              }}
-              className="h-10"
-            />
-          </div>
-        )}
-
-        {/* Row 2, Col 2: Class */}
         <div className="space-y-1">
           <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Class</Label>
           <CustomSelect
             options={classOptions}
             value={classFilter}
-            onChange={(val) => {
-              setClassFilter(val);
-              setSectionFilter('');
-              setChapterFilter('');
-              setLessonFilter('');
-              resetPage();
-            }}
+            onChange={(val) => { setClassFilter(val); setSectionFilter(''); resetPage(); }}
             placeholder="All"
             className="h-10"
           />
         </div>
-
-        {/* Row 2, Col 3: Section (only if assigned view) */}
-        {classScope !== 'entire' && (
-          <div className="space-y-1">
-            <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Section</Label>
-            <CustomSelect
-              options={sectionOptions}
-              value={sectionFilter}
-              onChange={(val) => { setSectionFilter(val); resetPage(); }}
-              disabled={!classFilter}
-              placeholder="All"
-              className="h-10"
-            />
-          </div>
-        )}
-
-        {/* Row 2, Col 4 / Col 3: Subject */}
+        <div className="space-y-1">
+          <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Section</Label>
+          <CustomSelect
+            options={sectionOptions}
+            value={sectionFilter}
+            onChange={(val) => { setSectionFilter(val); resetPage(); }}
+            disabled={!classFilter}
+            placeholder="All"
+            className="h-10"
+          />
+        </div>
         <div className="space-y-1">
           <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Subject</Label>
           <CustomSelect
             options={subjectOptions}
             value={subjectFilter}
-            onChange={(val) => {
-              setSubjectFilter(val);
-              setChapterFilter('');
-              setLessonFilter('');
-              resetPage();
-            }}
+            onChange={(val) => { setSubjectFilter(val); resetPage(); }}
             placeholder="All"
             className="h-10"
           />
         </div>
-
-        {/* Row 2, Col 4: Chapter (only if entire view) */}
-        {classScope === 'entire' && (
-          <div className="space-y-1">
-            <Label className="text-xs font-black text-slate-555 uppercase tracking-wider">Chapter</Label>
-            <CustomSelect
-              options={chapterOptions}
-              value={chapterFilter}
-              onChange={(val) => {
-                setChapterFilter(val);
-                setLessonFilter('');
-                resetPage();
-              }}
-              disabled={!subjectFilter}
-              placeholder={subjectFilter ? "All Chapters" : "Select Subject first"}
-              className="h-10"
-            />
-          </div>
-        )}
+        <div className="space-y-1">
+          <Label htmlFor="date_from" className="text-xs font-black text-slate-550 uppercase tracking-wider">From</Label>
+          <Input id="date_from" type="date" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); resetPage(); }} />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="date_to" className="text-xs font-black text-slate-550 uppercase tracking-wider">To</Label>
+          <Input id="date_to" type="date" className="py-2.5 rounded-xl border-slate-200 bg-white font-bold text-slate-800 focus:border-indigo-500 transition-all text-sm h-10 px-3" value={dateTo} onChange={(e) => { setDateTo(e.target.value); resetPage(); }} />
+        </div>
       </div>
-
-
 
       {/* table */}
       <div className="border border-slate-200/60 rounded-2xl overflow-hidden shadow-xs bg-white">
-        {classScope === 'entire' && (
-          <div className="bg-slate-50/80 border-b border-slate-200/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Section:</span>
-                <div className="w-48">
-                  <CustomSelect
-                    options={sectionDropdownOptions}
-                    value={sectionFilter}
-                    onChange={(val) => {
-                      setSectionFilter(val);
-                      resetPage();
-                    }}
-                    disabled={!classFilter}
-                    placeholder={classFilter ? "All Sections" : "Select Class first"}
-                    className="h-9 bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Lessons:</span>
-                <div className="w-48">
-                  <CustomSelect
-                    options={lessonOptions}
-                    value={lessonFilter}
-                    onChange={(val) => {
-                      setLessonFilter(val);
-                      resetPage();
-                    }}
-                    placeholder="All Lessons"
-                    className="h-9 bg-white"
-                  />
-                </div>
-              </div>
-            </div>
-            {classFilter && (
-              <div className="text-xs font-bold text-slate-500">
-                Completed exams for {classOptions.find(o => o.value === classFilter)?.label || ''} std - {sectionFilter ? sectionDropdownOptions.find(o => o.value === sectionFilter)?.label.split('-')[1] : 'All Sections'}
-              </div>
-            )}
-          </div>
-        )}
-
         {isLoading ? (
           <div className="py-12"><Spinner label="Loading completed exams..." /></div>
         ) : isError ? (
@@ -536,9 +262,9 @@ export default function CompletedExamsPage() {
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Student</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Class</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Subject</TableHead>
-                <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Lessons</TableHead>
                 <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Test</TableHead>
                 <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Score</TableHead>
+                <TableHead className="text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Submitted</TableHead>
                 <TableHead className="text-right text-[10px] font-black text-slate-500 uppercase tracking-wider py-3">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -555,20 +281,20 @@ export default function CompletedExamsPage() {
                       {s.class_name ? `${s.class_name}${s.section_name ? `-${s.section_name}` : ''}` : '--'}
                     </TableCell>
                     <TableCell className="font-semibold text-slate-900 py-3.5">{s.subject_name}</TableCell>
-                    <TableCell className="font-semibold text-slate-900 py-3.5">{s.lesson_name || '—'}</TableCell>
                     <TableCell className="font-semibold text-slate-900 py-3.5">{s.test_title}</TableCell>
                     <TableCell className="text-right font-bold text-indigo-600 py-3.5">
                       {s.obtained_marks !== null
                         ? `${parseFloat(s.obtained_marks).toFixed(1)} / ${parseFloat(s.total_marks ?? '0').toFixed(1)}`
                         : '--'}
                     </TableCell>
+                    <TableCell className="text-sm font-semibold text-slate-900 py-3.5">{formatDateTime(s.submitted_at)}</TableCell>
                     <TableCell className="text-right py-3.5">
                       {/* The Status COLUMN is gone, but the session's status is
                           still what decides whether this opens for evaluation or
                           read-only — so the row keeps reading it. */}
-                      <Button variant="ghost" size="icon" asChild aria-label="View">
+                      <Button asChild variant="outline" size="sm">
                         <Link to={`/teacher/evaluate/${s.id}`}>
-                          <Eye className="h-4 w-4" />
+                          {s.status === 'submitted' ? 'Review' : 'View'}
                         </Link>
                       </Button>
                     </TableCell>

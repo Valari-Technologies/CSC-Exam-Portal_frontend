@@ -60,18 +60,21 @@ const schoolSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   address: z.string().min(3, 'Address is required'),
   city: z.string().min(2, 'City is required'),
-  state: z.string().min(2, 'State is required'),
+  state: z.string().min(2, 'State is required').regex(/^[a-zA-Z\s]+$/, 'Only alphabetic characters are allowed'),
   pincode: z.string().regex(/^\d{4,10}$/, 'Pincode must be 4-10 digits'),
   // Optional in the SHARED schema so editing a legacy school with no recorded principal
   // isn't blocked. Add School (create) makes it required via createSchema below (item 4).
-  principal_name: z.string().optional().default(''),
+  principal_name: z.string().optional().default('').refine(val => !val || /^[a-zA-Z\s.]+$/.test(val), {
+    message: 'Only alphabetic characters are allowed',
+  }),
   official_email: z.string().email('Enter a valid email'),
-  contact_phone: z.string().min(6, 'Phone is required'),
+  contact_phone: z.string().min(1, 'Phone is required').regex(/^\d*$/, 'Only numbers are allowed').refine(val => !val || val.length === 10, 'Contact phone number must be exactly 10 digits'),
+  lan: z.string().regex(/^\d*$/, 'Only numbers are allowed').optional().default(''),
   status: z.enum(['active', 'inactive', 'suspended']),
   school_board: z.enum(['state_board', 'cbse', 'matriculation'], {
     errorMap: () => ({ message: 'School Board is required' }),
   }),
-  school_code: z.string().min(1, 'School Code is required'),
+  school_code: z.string().min(1, 'School Code is required').regex(/^\d+$/, 'Only numbers are allowed'),
 });
 
 /**
@@ -86,7 +89,7 @@ const schoolAdminSchema = z.object({
 // Add School requires every field, including Principal name (item 4). Edit uses the base
 // schoolSchema, where principal_name stays optional.
 const createSchema = schoolSchema.merge(schoolAdminSchema).extend({
-  principal_name: z.string().min(2, 'Principal name is required'),
+  principal_name: z.string().min(2, 'Principal name is required').regex(/^[a-zA-Z\s.]+$/, 'Only alphabetic characters are allowed'),
 });
 
 export type SchoolFormValues = z.infer<typeof createSchema>;
@@ -187,6 +190,7 @@ export function SchoolForm({ initial, onSubmit, submitLabel, title }: SchoolForm
       principal_name: '',
       official_email: '',
       contact_phone: '',
+      lan: '',
       status: 'active' as SchoolStatus,
       school_board: 'state_board' as SchoolBoard,
       school_code: '',
@@ -205,6 +209,7 @@ export function SchoolForm({ initial, onSubmit, submitLabel, title }: SchoolForm
         principal_name: initial.principal_name ?? '',
         official_email: initial.official_email,
         contact_phone: initial.contact_phone,
+        lan: initial.lan ?? '',
         status: initial.status,
         school_board: initial.school_board ?? 'state_board',
         school_code: initial.school_code ?? '',
@@ -423,39 +428,56 @@ export function SchoolForm({ initial, onSubmit, submitLabel, title }: SchoolForm
             />
             {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
           </div>
-          <AnimatedInput label="State" requiredMark error={errors.state?.message} {...register('state')} />
+          <AnimatedInput
+            label="State"
+            requiredMark
+            error={errors.state?.message}
+            {...register('state', {
+              onChange: (e) => {
+                e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+              },
+            })}
+          />
           <AnimatedInput
             label="Pincode"
             requiredMark
             error={errors.pincode?.message}
-            {...register('pincode')}
+            {...register('pincode', {
+              onChange: (e) => {
+                e.target.value = e.target.value.replace(/\D/g, '');
+              },
+            })}
           />
           <AnimatedInput
             label="Principal name"
             requiredMark={!isEdit}
             error={errors.principal_name?.message}
-            {...register('principal_name')}
+            {...register('principal_name', {
+              onChange: (e) => {
+                e.target.value = e.target.value.replace(/[^a-zA-Z\s.]/g, '');
+              },
+            })}
           />
-          <div className="space-y-1">
-            <AnimatedInput
-              label="Official school email"
-              requiredMark
-              type="email"
-              placeholder="office@school.edu"
-              error={errors.official_email?.message}
-              {...register('official_email')}
-            />
-            {!errors.official_email && (
-              <p className="text-xs text-muted-foreground">
-                This email is used only for communication.
-              </p>
-            )}
-          </div>
+          <AnimatedInput
+            label="LAN"
+            placeholder="e.g. 044-2432424"
+            error={errors.lan?.message}
+            {...register('lan', {
+              onChange: (e) => {
+                e.target.value = e.target.value.replace(/\D/g, '');
+              },
+            })}
+          />
           <AnimatedInput
             label="Contact phone"
             requiredMark
+            maxLength={10}
             error={errors.contact_phone?.message}
-            {...register('contact_phone')}
+            {...register('contact_phone', {
+              onChange: (e) => {
+                e.target.value = e.target.value.replace(/\D/g, '');
+              },
+            })}
           />
           <div className="space-y-1">
             <label className="block text-sm font-medium" htmlFor="status">
@@ -498,8 +520,27 @@ export function SchoolForm({ initial, onSubmit, submitLabel, title }: SchoolForm
             requiredMark
             placeholder="e.g. 33010100101"
             error={errors.school_code?.message}
-            {...register('school_code')}
+            {...register('school_code', {
+              onChange: (e) => {
+                e.target.value = e.target.value.replace(/\D/g, '');
+              },
+            })}
           />
+          <div className="space-y-1">
+            <AnimatedInput
+              label="Official school email"
+              requiredMark
+              type="email"
+              placeholder="office@school.edu"
+              error={errors.official_email?.message}
+              {...register('official_email')}
+            />
+            {!errors.official_email && (
+              <p className="text-xs text-muted-foreground">
+                This email is used only for communication.
+              </p>
+            )}
+          </div>
 
           <div className="md:col-span-2 space-y-2">
             <label className="block text-sm font-medium">School logo</label>

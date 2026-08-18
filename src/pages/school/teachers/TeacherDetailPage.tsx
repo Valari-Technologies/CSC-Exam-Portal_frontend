@@ -53,6 +53,7 @@ export default function TeacherDetailPage() {
     ['Email', teacher.user.email],
     ['Teacher ID', teacher.teacher_id || '—'],
     ['Employee ID', teacher.employee_id || '—'],
+    ['Contact Number', teacher.contact_number || '—'],
     ['Gender', GENDER_OPTIONS.find((g) => g.value === teacher.gender)?.label ?? '—'],
     ['Qualification', teacher.qualification || '—'],
     ['Joining Date', teacher.joining_date || '—'],

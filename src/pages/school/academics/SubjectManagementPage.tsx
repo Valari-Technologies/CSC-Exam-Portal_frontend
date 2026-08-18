@@ -29,7 +29,7 @@ import {
 import { classesService, subjectsService } from '@/services/academics.service';
 import { schoolsService } from '@/services/schools.service';
 import { useAuth } from '@/hooks/useAuth';
-import { classLabel } from '@/lib/utils';
+import { classLabel, cn } from '@/lib/utils';
 import type { Subject, SubjectWriteRequest, Class } from '@/types';
 import subjectsHeaderImg from '@/assets/dashboard_designs/Academics/subjects/subjects.webp';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -339,6 +339,8 @@ function SubjectDialog({ open, initial, classes, defaultClassId, onClose, onSave
     handleSubmit,
     reset,
     setError,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<SubjectFormValues>({
     resolver: zodResolver(subjectSchema),
@@ -403,14 +405,18 @@ function SubjectDialog({ open, initial, classes, defaultClassId, onClose, onSave
         </DialogHeader>
         <form onSubmit={handleSubmit(submit)} className="space-y-4" noValidate>
           <div className="space-y-1">
-            <label className="block text-sm font-medium">Class</label>
-            <select
-              className="w-full px-4 py-3 rounded-xl border-2 border-input bg-background focus:border-primary outline-none"
-              {...register('school_class')}
-            >
-              <option value={0} disabled>Select a class…</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{classLabel(c)}</option>)}
-            </select>
+            <label className="block text-sm font-medium" htmlFor="school_class">Class</label>
+            <input type="hidden" {...register('school_class')} />
+            <CustomSelect
+              options={classes.map((c) => ({ value: String(c.id), label: classLabel(c) }))}
+              value={watch('school_class') ? String(watch('school_class')) : ''}
+              onChange={(val) => setValue('school_class', Number(val), { shouldValidate: true })}
+              placeholder="Select a class…"
+              containerClassName="w-full"
+              className={cn(
+                errors.school_class && "border-destructive focus:border-destructive"
+              )}
+            />
             {errors.school_class && <p className="text-sm text-destructive">{errors.school_class.message}</p>}
           </div>
           <AnimatedInput label="Subject name" placeholder="Mathematics" error={errors.name?.message} {...register('name')} />

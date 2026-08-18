@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { Plus, X } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Spinner } from '@/components/ui/Spinner';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { classesService, sectionsService, subjectsService } from '@/services/academics.service';
 import { teachersService } from '@/services/teachers.service';
 import type { TeacherProfileDetail } from '@/types';
@@ -108,6 +109,15 @@ export default function AssignClassSection({ teacher }: AssignClassSectionProps)
 
   const assignments = assignmentsQuery.data?.results ?? [];
 
+  useEffect(() => {
+    if (assignments.length > 0 && !academicYear) {
+      const firstWithYear = assignments.find(a => a.academic_year);
+      if (firstWithYear) {
+        setAcademicYear(firstWithYear.academic_year);
+      }
+    }
+  }, [assignments, academicYear]);
+
   return (
     <div className="rounded-xl border-2 border-input p-4 space-y-3">
       <div>
@@ -131,51 +141,49 @@ export default function AssignClassSection({ teacher }: AssignClassSectionProps)
       <div className="flex flex-wrap items-end gap-2">
         <div className="space-y-1.5">
           <Label htmlFor="assign_class">Class</Label>
-          <select
-            id="assign_class"
-            value={pickedClass}
-            onChange={(e) => {
-              setPickedClass(e.target.value === '' ? '' : Number(e.target.value));
+          <CustomSelect
+            options={[
+              { value: '', label: 'Select class' },
+              ...(classesQuery.data?.results.map((c) => ({ value: String(c.id), label: `Class ${c.name}` })) || [])
+            ]}
+            value={String(pickedClass)}
+            onChange={(val) => {
+              setPickedClass(val === '' ? '' : Number(val));
               setPickedSection('');
               setPickedSubject('');
             }}
-            className="py-2 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="">Select class</option>
-            {classesQuery.data?.results.map((c) => (
-              <option key={c.id} value={c.id}>Class {c.name}</option>
-            ))}
-          </select>
+            containerClassName="w-44"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="assign_section">Section</Label>
-          <select
-            id="assign_section"
-            value={pickedSection}
+          <CustomSelect
+            options={[
+              { value: '', label: 'All sections' },
+              ...(sectionsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || [])
+            ]}
+            value={String(pickedSection)}
             disabled={pickedClass === ''}
-            onChange={(e) => setPickedSection(e.target.value === '' ? '' : Number(e.target.value))}
-            className="py-2 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
-          >
-            <option value="">All sections</option>
-            {sectionsQuery.data?.results.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+            onChange={(val) => {
+              setPickedSection(val === '' ? '' : Number(val));
+            }}
+            containerClassName="w-40"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="assign_subject">Subject</Label>
-          <select
-            id="assign_subject"
-            value={pickedSubject}
+          <CustomSelect
+            options={[
+              { value: '', label: 'No subject' },
+              ...(subjectsQuery.data?.results.map((s) => ({ value: String(s.id), label: s.name })) || [])
+            ]}
+            value={String(pickedSubject)}
             disabled={pickedClass === ''}
-            onChange={(e) => setPickedSubject(e.target.value === '' ? '' : Number(e.target.value))}
-            className="py-2 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
-          >
-            <option value="">No subject</option>
-            {subjectsQuery.data?.results.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+            onChange={(val) => {
+              setPickedSubject(val === '' ? '' : Number(val));
+            }}
+            containerClassName="w-48"
+          />
         </div>
         <Button type="button" variant="outline" onClick={onAdd} disabled={addMutation.isPending}>
           <Plus className="mr-1 h-4 w-4" /> {addMutation.isPending ? 'Adding…' : 'Add'}

@@ -32,11 +32,14 @@ interface PendingAssignment {
 // history with principal_name). Add Teacher uses the stricter createTeacherSchema below.
 const teacherSchema = z.object({
   email: z.string().email('Valid email required'),
-  full_name: z.string().min(2, 'Name must be at least 2 characters'),
+  full_name: z.string().min(2, 'Name must be at least 2 characters').regex(/^[a-zA-Z\s.]+$/, 'Only alphabetic characters are allowed'),
   school: z.number().optional(),
-  employee_id: z.string().optional(),
+  employee_id: z.string().regex(/^\d*$/, 'Only numbers are allowed').optional().default(''),
+  contact_number: z.string().regex(/^\d*$/, 'Only numbers are allowed').refine(val => !val || val.length === 10, 'Contact number must be exactly 10 digits').optional().default(''),
   gender: z.enum(['', 'male', 'female', 'other']).optional(),
-  qualification: z.string().optional(),
+  qualification: z.string().optional().default('').refine(val => !val || /^[a-zA-Z\s.,()]+$/.test(val), {
+    message: 'Only alphabetic characters are allowed',
+  }),
   joining_date: z.string().optional(),
   // e.g. "2025-26". Stamped onto every class assignment created with the teacher.
   academic_year: z.string().optional(),
@@ -49,6 +52,24 @@ const teacherSchema = z.object({
 const createTeacherSchema = teacherSchema.superRefine((val, ctx) => {
   const required: [keyof z.infer<typeof teacherSchema>, string][] = [
     ['employee_id', 'Employee ID is required'],
+    ['contact_number', 'Contact number is required'],
+    ['gender', 'Gender is required'],
+    ['qualification', 'Qualification is required'],
+    ['joining_date', 'Joining date is required'],
+    ['academic_year', 'Academic year is required'],
+  ];
+  for (const [field, message] of required) {
+    if (!val[field]) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+    }
+  }
+});
+
+// Edit Teacher: every field required EXCEPT academic_year (which is not editable here).
+const editTeacherSchema = teacherSchema.superRefine((val, ctx) => {
+  const required: [keyof z.infer<typeof teacherSchema>, string][] = [
+    ['employee_id', 'Employee ID is required'],
+    ['contact_number', 'Contact number is required'],
     ['gender', 'Gender is required'],
     ['qualification', 'Qualification is required'],
     ['joining_date', 'Joining date is required'],
@@ -109,12 +130,13 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
     formState: { errors },
   } = useForm<TeacherFormValues>({
     // Stricter rules enforced for both adding and editing.
-    resolver: zodResolver(createTeacherSchema),
+    resolver: zodResolver(initialData ? editTeacherSchema : createTeacherSchema),
     defaultValues: {
       email: '',
       full_name: '',
       school: undefined,
       employee_id: '',
+      contact_number: '',
       gender: '',
       qualification: '',
       joining_date: '',
@@ -198,9 +220,10 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
         full_name: initialData.user.full_name,
         school: initialData.school,
         employee_id: initialData.employee_id,
+        contact_number: initialData.contact_number ?? '',
         gender: initialData.gender,
         qualification: initialData.qualification,
-        joining_date: initialData.joining_date || '',
+        joining_date: initialData.joining_date ? initialData.joining_date.substring(0, 10) : '',
         // Not populated: the academic year lives on the teacher's assignments, which the
         // Assign Class section manages directly.
         academic_year: '',
@@ -216,6 +239,7 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
         full_name: data.full_name,
         school: data.school,
         employee_id: data.employee_id,
+        contact_number: data.contact_number,
         gender: data.gender,
         qualification: data.qualification,
         joining_date: data.joining_date || undefined,
@@ -384,7 +408,14 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
               <Label htmlFor="full_name">
                 Full Name <span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Input id="full_name" {...register('full_name')} />
+              <Input
+                id="full_name"
+                {...register('full_name', {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/[^a-zA-Z\s.]/g, '');
+                  },
+                })}
+              />
               {errors.full_name && <p className="text-xs text-destructive">{errors.full_name.message}</p>}
             </div>
             <div className="space-y-1.5">
@@ -418,7 +449,14 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
               <Label htmlFor="employee_id">
                 Employee ID <span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Input id="employee_id" {...register('employee_id')} />
+              <Input
+                id="employee_id"
+                {...register('employee_id', {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '');
+                  },
+                })}
+              />
               {errors.employee_id && (
                 <p className="text-xs text-destructive">{errors.employee_id.message}</p>
               )}
@@ -443,18 +481,48 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
               <Label htmlFor="qualification">
                 Qualification <span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Input id="qualification" {...register('qualification')} />
+              <Input
+                id="qualification"
+                {...register('qualification', {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/[^a-zA-Z\s.,()]/g, '');
+                  },
+                })}
+              />
               {errors.qualification && (
                 <p className="text-xs text-destructive">{errors.qualification.message}</p>
               )}
             </div>
-            <div className="space-y-1.5 md:col-span-2">
+            <div className="space-y-1.5">
               <Label htmlFor="joining_date">
                 Joining Date <span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Input id="joining_date" type="date" {...register('joining_date')} className="max-w-xs" />
+              <Input
+                id="joining_date"
+                type="date"
+                value={watch('joining_date')}
+                {...register('joining_date')}
+              />
               {errors.joining_date && (
                 <p className="text-xs text-destructive">{errors.joining_date.message}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="contact_number">
+                Contact Number <span className="ml-0.5 text-destructive">*</span>
+              </Label>
+              <Input
+                id="contact_number"
+                placeholder="e.g. 9876543210"
+                maxLength={10}
+                {...register('contact_number', {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '');
+                  },
+                })}
+              />
+              {errors.contact_number && (
+                <p className="text-xs text-destructive">{errors.contact_number.message}</p>
               )}
             </div>
           </div>
@@ -471,7 +539,7 @@ export default function TeacherForm({ initialData, onSubmit, isSubmitting, title
 
               <div className="space-y-1.5 max-w-xs">
                 <Label htmlFor="academic_year">
-                  Academic Year <span className="text-muted-foreground font-normal">(optional)</span>
+                  Academic Year <span className="ml-0.5 text-destructive">*</span>
                 </Label>
                 <Input id="academic_year" placeholder="2025-26" {...register('academic_year')} />
                 <p className="text-xs text-muted-foreground">

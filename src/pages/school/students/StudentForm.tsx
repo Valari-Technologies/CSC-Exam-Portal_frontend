@@ -23,7 +23,7 @@ const studentSchema = z.object({
   // Optional: students sign in with a Student ID, so an email is contact information
   // rather than a credential. Blank is allowed; anything typed must still be an email.
   email: z.union([z.string().email('Valid email required'), z.literal('')]).optional(),
-  full_name: z.string().min(2, 'Name must be at least 2 characters'),
+  full_name: z.string().min(2, 'Name must be at least 2 characters').regex(/^[a-zA-Z\s.]+$/, 'Only alphabetic characters are allowed'),
   student_id: z.string().optional(),
   // Blank means "auto-generate" (create) or "keep the current password" (edit); anything
   // typed must satisfy the same policy the server enforces.
@@ -31,13 +31,13 @@ const studentSchema = z.object({
   school: z.number().optional(),
   school_class: z.number({ required_error: 'Class is required' }),
   section: z.number({ required_error: 'Section is required' }),
-  roll_number: z.string().min(1, 'Roll number is required'),
+  roll_number: z.string().min(1, 'Roll number is required').regex(/^\d+$/, 'Only numbers are allowed'),
   admission_number: z.string().min(1, 'Admission number is required'),
   sub_section_code: z.string().optional().nullable(),
   date_of_birth: z.string().min(1, 'Date of birth is required'),
   gender: z.string().min(1, 'Gender is required'),
-  parent_name: z.string().min(1, 'Parent name is required'),
-  parent_phone: z.string().min(1, 'Parent phone is required'),
+  parent_name: z.string().min(1, 'Parent name is required').regex(/^[a-zA-Z\s.]+$/, 'Only alphabetic characters are allowed'),
+  parent_phone: z.string().min(1, 'Parent phone is required').regex(/^\d*$/, 'Only numbers are allowed').refine(val => !val || val.length === 10, 'Parent phone number must be exactly 10 digits'),
   is_active: z.boolean().default(true),
 });
 
@@ -168,7 +168,7 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
         roll_number: initialData.roll_number,
         admission_number: initialData.admission_number,
         sub_section_code: initialData.sub_section_code || null,
-        date_of_birth: initialData.date_of_birth || '',
+        date_of_birth: initialData.date_of_birth ? initialData.date_of_birth.substring(0, 10) : '',
         gender: initialData.gender,
         parent_name: initialData.parent_name,
         parent_phone: initialData.parent_phone,
@@ -283,7 +283,14 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
               <Label htmlFor="full_name">
                 Full Name <span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Input id="full_name" {...register('full_name')} />
+              <Input
+                id="full_name"
+                {...register('full_name', {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/[^a-zA-Z\s.]/g, '');
+                  },
+                })}
+              />
               {errors.full_name && <p className="text-xs text-destructive">{errors.full_name.message}</p>}
             </div>
             <div className="space-y-1.5">
@@ -358,7 +365,14 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
               <Label htmlFor="roll_number">
                 Roll Number <span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Input id="roll_number" {...register('roll_number')} />
+              <Input
+                id="roll_number"
+                {...register('roll_number', {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '');
+                  },
+                })}
+              />
               {errors.roll_number && <p className="text-xs text-destructive">{errors.roll_number.message}</p>}
             </div>
             <div className="space-y-1.5">
@@ -374,7 +388,12 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
               <Label htmlFor="date_of_birth">
                 Date of Birth <span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Input id="date_of_birth" type="date" {...register('date_of_birth')} />
+              <Input
+                id="date_of_birth"
+                type="date"
+                value={watch('date_of_birth')}
+                {...register('date_of_birth')}
+              />
               {errors.date_of_birth && (
                 <p className="text-xs text-destructive">{errors.date_of_birth.message}</p>
               )}
@@ -401,7 +420,14 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
               <Label htmlFor="parent_name">
                 Parent Name <span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Input id="parent_name" {...register('parent_name')} />
+              <Input
+                id="parent_name"
+                {...register('parent_name', {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/[^a-zA-Z\s.]/g, '');
+                  },
+                })}
+              />
               {errors.parent_name && (
                 <p className="text-xs text-destructive">{errors.parent_name.message}</p>
               )}
@@ -410,7 +436,15 @@ export default function StudentForm({ initialData, onSubmit, isSubmitting, title
               <Label htmlFor="parent_phone">
                 Parent Phone <span className="ml-0.5 text-destructive">*</span>
               </Label>
-              <Input id="parent_phone" {...register('parent_phone')} />
+              <Input
+                id="parent_phone"
+                maxLength={10}
+                {...register('parent_phone', {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '');
+                  },
+                })}
+              />
               {errors.parent_phone && (
                 <p className="text-xs text-destructive">{errors.parent_phone.message}</p>
               )}

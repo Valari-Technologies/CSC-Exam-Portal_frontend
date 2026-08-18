@@ -17,6 +17,7 @@ export interface School {
   /** The school's official CONTACT address. Never used for login or password reset. */
   official_email: string;
   contact_phone: string;
+  lan?: string;
   logo: string | null;
   logo_url: string | null;
   status: SchoolStatus;
@@ -42,6 +43,7 @@ export interface SchoolListItem {
   city: string;
   state: string;
   official_email: string;
+  lan?: string;
   status: SchoolStatus;
   school_board: SchoolBoard;
   school_code: string;
@@ -62,6 +64,7 @@ export interface SchoolWriteRequest {
   principal_name: string;
   official_email: string;
   contact_phone: string;
+  lan?: string;
   status: SchoolStatus;
   school_board: SchoolBoard;
   school_code: string;

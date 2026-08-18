@@ -40,6 +40,7 @@ export interface TeacherProfile {
    */
   teacher_id: string;
   employee_id: string;
+  contact_number?: string;
   /** '' when unknown — teachers created before this field existed have no value. */
   gender: Gender | '';
   qualification: string;
@@ -58,6 +59,7 @@ export interface TeacherProfileDetail {
   /** Auto-generated from the school's School ID, e.g. KARTR_001. See TeacherProfile. */
   teacher_id: string;
   employee_id: string;
+  contact_number?: string;
   /** '' when unknown — see TeacherProfile. */
   gender: Gender | '';
   qualification: string;
@@ -85,6 +87,7 @@ export interface TeacherWriteRequest {
   full_name: string;
   school?: number;
   employee_id?: string;
+  contact_number?: string;
   gender?: Gender | '';
   qualification?: string;
   joining_date?: string | null;

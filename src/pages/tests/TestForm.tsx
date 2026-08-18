@@ -182,9 +182,16 @@ export default function TestForm({ initialData, onSubmit, isSubmitting, title }:
     : null;
 
   const assignedSubjects = isTeacher
-    ? (assignmentsQuery.data?.results || [])
-        .filter((a) => a.school_class === selectedClass && a.subject !== null)
-        .map((a) => ({ id: a.subject as number, name: a.subject_name || '' }))
+    ? Array.from(
+        new Map(
+          (assignmentsQuery.data?.results || [])
+            .filter((a) => a.school_class === selectedClass && a.subject !== null)
+            .map((a) => [
+              a.subject,
+              { id: a.subject as number, name: a.subject_name || '' }
+            ])
+        ).values()
+      )
     : null;
 
   return (
