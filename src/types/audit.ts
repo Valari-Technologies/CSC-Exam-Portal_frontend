@@ -25,6 +25,8 @@ export interface AuditLog {
   user: number | null;
   user_email: string | null;
   user_name: string | null;
+  user_role: string | null;
+  student_id: string | null;
   action: AuditAction;
   entity_type: string;
   entity_id: number | null;

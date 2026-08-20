@@ -161,7 +161,7 @@ export default function TeachersListPage() {
                 <TableHead>Qualification</TableHead>
                 <TableHead>Assign Class</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

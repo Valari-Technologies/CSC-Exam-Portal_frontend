@@ -6,6 +6,7 @@ import auditLogHeaderImg from '@/assets/dashboard_designs/Audit logs/audit log.w
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { DatePicker } from '@/components/ui/DatePicker';
 import {
   Table,
   TableBody,
@@ -44,6 +45,8 @@ export default function AuditLogsPage() {
   const [actionFilter, setActionFilter] = useState('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -62,13 +65,27 @@ export default function AuditLogsPage() {
     };
   }, [dropdownOpen]);
 
+  const formatDateTimeFilter = (val: string, isToDate: boolean = false) => {
+    if (!val) return undefined;
+    try {
+      const dateStr = isToDate ? `${val}T23:59:59` : `${val}T00:00:00`;
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return undefined;
+      return date.toISOString();
+    } catch (e) {
+      return undefined;
+    }
+  };
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['audit-logs', { page, action: actionFilter, search }],
+    queryKey: ['audit-logs', { page, action: actionFilter, search, fromDate, toDate }],
     queryFn: () =>
       auditService.list({
         page,
         action: actionFilter || undefined,
         search: search || undefined,
+        created_at__gte: formatDateTimeFilter(fromDate, false),
+        created_at__lte: formatDateTimeFilter(toDate, true),
       }),
     placeholderData: keepPreviousData,
   });
@@ -119,7 +136,7 @@ export default function AuditLogsPage() {
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search logs by email address..."
+            placeholder="Search logs by email address or student ID..."
             className="pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all font-semibold"
           />
         </form>
@@ -175,6 +192,50 @@ export default function AuditLogsPage() {
             </div>
           )}
         </div>
+
+        {/* Date Filters */}
+        <div className="flex flex-wrap gap-4 items-center w-full lg:w-auto">
+          <div className="flex flex-col gap-1 w-full sm:w-[180px]">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-1">From Date</label>
+            <DatePicker
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Select start date"
+              className="h-10 border-slate-200 bg-slate-50/50 text-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all rounded-xl"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 w-full sm:w-[180px]">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-1">To Date</label>
+            <DatePicker
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Select end date"
+              className="h-10 border-slate-200 bg-slate-50/50 text-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all rounded-xl"
+              align="right"
+            />
+          </div>
+
+          {(fromDate || toDate) && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setFromDate('');
+                setToDate('');
+                setPage(1);
+              }}
+              className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-50 font-bold px-3 py-2 rounded-xl cursor-pointer self-end"
+            >
+              Clear Dates
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Table Card Container */}
@@ -192,40 +253,72 @@ export default function AuditLogsPage() {
                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center w-20">S.No</TableHead>
                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Date / Time</TableHead>
                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">User</TableHead>
+                <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Role</TableHead>
                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Action</TableHead>
                 <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center w-28">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.results.map((log, index) => (
-                <TableRow key={log.id} className="border-b border-slate-100 hover:bg-slate-50/30 transition-colors">
-                  <TableCell className="text-center font-semibold text-slate-500 tabular-nums">
-                    {(page - 1) * 20 + index + 1}
-                  </TableCell>
-                  <TableCell className="text-xs font-bold text-slate-700 whitespace-nowrap">
-                    {new Date(log.created_at).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-sm font-bold text-indigo-600">
-                    {log.user_email || '—'}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200/40 text-[11px] font-bold px-2 py-0.5">
-                      {ACTION_LABELS[log.action] || log.action}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge
-                      variant={log.status === 'success' ? 'success' : 'destructive'}
-                      className={log.status === 'success' 
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/40 text-[11px] font-bold px-2 py-0.5'
-                        : 'bg-rose-50 text-rose-700 border-rose-200/40 text-[11px] font-bold px-2 py-0.5'
-                      }
-                    >
-                      {log.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {data?.results.map((log, index) => {
+                const getDisplayUser = () => {
+                  if (log.user_role === 'student') {
+                    return log.student_id || '—';
+                  }
+                  if (log.student_id) {
+                    return log.student_id;
+                  }
+                  return log.user_email || '—';
+                };
+
+                const getRoleLabel = (role: string | null) => {
+                  if (!role) return '—';
+                  switch (role) {
+                    case 'csc_admin':
+                      return 'Super Admin';
+                    case 'school_admin':
+                      return 'Principal';
+                    case 'teacher':
+                      return 'Teacher';
+                    case 'student':
+                      return 'Student';
+                    default:
+                      return role.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                  }
+                };
+
+                return (
+                  <TableRow key={log.id} className="border-b border-slate-100 hover:bg-slate-50/30 transition-colors">
+                    <TableCell className="text-center font-semibold text-slate-500 tabular-nums">
+                      {(page - 1) * 20 + index + 1}
+                    </TableCell>
+                    <TableCell className="text-xs font-bold text-slate-700 whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-sm font-bold text-indigo-600">
+                      {getDisplayUser()}
+                    </TableCell>
+                    <TableCell className="text-xs font-bold text-slate-600">
+                      {getRoleLabel(log.user_role)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200/40 text-[11px] font-bold px-2 py-0.5">
+                        {ACTION_LABELS[log.action] || log.action}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        variant={log.status === 'success' ? 'success' : 'destructive'}
+                        className={log.status === 'success' 
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200/40 text-[11px] font-bold px-2 py-0.5'
+                          : 'bg-rose-50 text-rose-700 border-rose-200/40 text-[11px] font-bold px-2 py-0.5'
+                        }
+                      >
+                        {log.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}

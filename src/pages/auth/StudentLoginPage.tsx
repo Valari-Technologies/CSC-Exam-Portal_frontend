@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -59,7 +59,7 @@ function GoogleIcon({ className = 'w-5 h-5' }: { className?: string }) {
 
 /* ── component ───────────────────────────────────────────────────────── */
 export default function StudentLoginPage() {
-  const { studentLogin, loginWithGoogle } = useAuth();
+  const { studentLogin, loginWithGoogle, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [formError, setFormError] = useState<string | null>(null);
@@ -67,9 +67,15 @@ export default function StudentLoginPage() {
   // Shown after a password change redirected the student back here.
   const notice = (location.state as LocationState | null)?.message ?? null;
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      logout();
+    }
+  }, [isAuthenticated, logout]);
+
   const redirectAfterLogin = () => {
     const from = (location.state as LocationState | null)?.from?.pathname ?? '/student/dashboard';
-    navigate(from, { replace: true });
+    navigate(from);
   };
 
   const onGoogleCredential = async (idToken: string) => {
@@ -727,37 +733,27 @@ export default function StudentLoginPage() {
         }
 
         @media (max-width: 860px) {
-          .sl-50split-container {
-            flex-direction: column;
-            overflow-y: auto;
-          }
           .sl-left-artwork-panel {
-            width: 100%;
-            min-height: 260px;
-            height: auto;
-          }
-          .sl-hero-img-full {
-            object-fit: cover;
-            object-position: top center;
+            display: none;
           }
           .sl-right-form-panel {
             width: 100%;
-            height: auto;
-            min-height: auto;
-            overflow-y: visible;
-            padding: 2.5rem 1.5rem 2rem;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
           }
           .sl-card-box {
-            margin: 0 auto;
+            width: 100%;
+            max-width: 440px;
+            margin: auto;
           }
         }
 
         @media (max-width: 520px) {
-          .sl-left-artwork-panel {
-            min-height: 220px;
-          }
           .sl-right-form-panel {
-            padding: 2rem 1rem;
+            padding: 1rem;
           }
           .sl-card-box {
             padding: 2rem 1.25rem 1.5rem;

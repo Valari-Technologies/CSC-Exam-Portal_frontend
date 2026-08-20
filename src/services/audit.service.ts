@@ -8,6 +8,8 @@ export interface AuditListParams {
   user?: number;
   search?: string;
   ordering?: string;
+  created_at__gte?: string;
+  created_at__lte?: string;
 }
 
 export const auditService = {
