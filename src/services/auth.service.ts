@@ -8,6 +8,16 @@ import type {
 } from '@/types';
 
 export const authService = {
+  /**
+   * Unauthenticated reachability probe (GET /api/v1/auth/health/). Confirms the frontend's
+   * VITE_API_URL points at a live backend and that CORS lets this origin through, without
+   * touching credentials. Resolves with the backend's own status payload.
+   */
+  async health(): Promise<{ status: string; service: string }> {
+    const { data } = await api.get<{ status: string; service: string }>('auth/health/');
+    return data;
+  },
+
   /** Email + password — CSC Admin, School Admin, Teacher. */
   async login(payload: LoginRequest): Promise<LoginResponse> {
     const { data } = await api.post<LoginResponse>('auth/login/', payload);
